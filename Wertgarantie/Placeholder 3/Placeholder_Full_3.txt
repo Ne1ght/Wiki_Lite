@@ -1,0 +1,7 @@
+this is placehodler 3
+
+text for the full version
+
+of the txt file in
+
+the tkinter programm
