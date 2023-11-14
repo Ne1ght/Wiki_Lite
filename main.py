@@ -347,7 +347,7 @@ class AddWindow:
     def add_infomation(self):
         self.add_window.geometry("1600x800")
         Info_Header_Name = self.Info_Header_Name
-        Info_name = self.entry_cate_name.get()
+        Info_name = self.enrty_Infomation_name.get()
         Info_Sum_Text = self.add_Infomation_sum_Text.get("1.0", "end-1c")
         Info_Full_Text = self.add_Infomation_full_Text.get("1.0", "end-1c")
         self.add_frame.pack_forget()
@@ -426,6 +426,11 @@ class AddWindow:
             top.grab_set()
 
         else:
+
+            print(Info_Header_Name)
+            print(Info_name)
+            print(Info_Sum_Text)
+            print(Info_Full_Text)
             cur.execute(
                 """INSERT INTO category_infomation (Header_Info_name, Info_name, Info_Sum_text, Info_Full_text) VALUES (?, ?, ?, ?)""",
                 (Info_Header_Name, Info_name, Info_Sum_Text, Info_Full_Text)
@@ -439,12 +444,57 @@ class ChangeWindow:
     def __init__(self, root_window):
         self.mainroot = root_window
 
+        self.selected_category_source = None
+
+        self.Info_Header_Name = None
+
+        validate_cmd = self.mainroot.register(self.on_validate)
+
         self.change_window = Toplevel(self.mainroot)
         self.change_window.title("Change Window")
-        self.change_window.geometry("800x400")
+        self.change_window.geometry("1200x400")
 
         self.change_frame = Frame(self.change_window)
         self.change_frame.pack()
+
+        cur.execute("SELECT Head_category_name from Head_category")
+        self.Head_table_categorys = cur.fetchall()
+        print(self.Head_table_categorys)
+
+        cur.execute("SELECT Header_Info_name, Sub_Category_name FROM sub_category")
+        self.Sub_table_categorys = cur.fetchall()
+        print(self.Sub_table_categorys)
+
+        cur.execute("SELECT Header_Info_name, Info_name FROM category_infomation")
+        self.info_table_categorys = cur.fetchall()
+        print(self.info_table_categorys)
+
+        self.Main_listbox = Listbox(self.change_frame,
+                                    selectmode=SINGLE,
+                                    font=("Myriad Pro", 15)
+                                    )
+        self.Main_listbox.grid(row=1, column=0)
+
+        for entry in self.Head_table_categorys:
+            self.Main_listbox.insert(END, entry[0])  # Extracting the value from the single-element tuple
+
+        self.Main_listbox.bind('<<ListboxSelect>>', self.on_select_headlist)
+
+        self.Sub_listbox = Listbox(self.change_frame,
+                                   selectmode=SINGLE,
+                                   font=("Myriad Pro", 15)
+                                   )
+        self.Sub_listbox.grid(row=1, column=1)
+
+        self.Sub_listbox.bind('<<ListboxSelect>>', self.on_select_sublist)
+
+        self.infomation_listbox = Listbox(self.change_frame,
+                                          selectmode=SINGLE,
+                                          font=("Myriad Pro", 15)
+                                          )
+        self.infomation_listbox.grid(row=1, column=2)
+
+        self.infomation_listbox.bind('<<ListboxSelect>>', self.on_select_infoamtionlist)
 
         self.change_label = Label(self.change_frame,
                                   text="What Category do you want to Change",
@@ -452,11 +502,6 @@ class ChangeWindow:
                                   relief=RAISED
                                   )
         self.change_label.grid(row=0, column=1)
-
-        self.listbox = Listbox(self.change_frame,
-                               selectmode=SINGLE
-                               )
-        self.listbox.grid(row=1, column=1)
 
         self.change_open_button = Button(self.change_frame,
                                          text="Open category",
@@ -483,6 +528,42 @@ class ChangeWindow:
                                      )
         self.new_category_type = Entry(self.input_change_frame)
 
+        self.new_old_Info_Sum_label = Label(self.input_change_frame,
+                                            text="Enter a Summary",
+                                            font=("Myriad Pro", 20),
+                                            relief=RAISED
+                                            )
+
+        self.new_old_Info_Sum_text = Text(self.input_change_frame,
+                                            height=30,
+                                            width=75,
+                                            wrap="word",
+                                            insertborderwidth=2,
+                                            padx=5,
+                                            pady=5)
+
+        self.new_old_Info_sum_scrollbar = Scrollbar(self.input_change_frame,
+                                                           command=self.new_old_Info_Sum_text.yview)
+
+        self.error_label = Label(self.input_change_frame)
+
+        self.new_old_Info_Sum_text.bind('<Key>', lambda e: self.on_validate(e.char))
+
+        self.new_old_Info_full_label = Label(self.input_change_frame,
+                                             text="Enter a Full Version",
+                                             font=("Myriad Pro", 20),
+                                             relief=RAISED)
+
+        self.new_old_Info_full_text = Text(self.input_change_frame,
+                                            height=30,
+                                            width=75,
+                                            wrap="word",
+                                            insertborderwidth=2,
+                                            padx=5,
+                                            pady=5)
+
+        self.new_old_Info_full_scrollbar = Scrollbar(self.input_change_frame)
+
         self.old_button_name = Label(self.input_change_frame,
                                      text="",
                                      font=("Myriad Pro", 20),
@@ -499,6 +580,7 @@ class ChangeWindow:
                                        relief=RAISED
                                     )
 
+
         self.change_old_info_button = Button(self.input_change_frame,
                                              text="Change",
                                              font=("Myriad Pro", 20),
@@ -506,13 +588,51 @@ class ChangeWindow:
                                              command=self.update_databse
                                              )
 
-        self.populate_listbox()
+    def on_select_headlist(self, event):
+        if self.Main_listbox.curselection():
+            selected_index = self.Main_listbox.curselection()[0]
+            selected = self.Main_listbox.get(selected_index)
+            self.filter_list2(selected)
+            self.filter_list3(selected)
 
-    def populate_listbox(self):
-        cur.execute("SELECT Head_category_name FROM Head_category")
-        existing_buttons = cur.fetchall()
-        for button in existing_buttons:
-            self.listbox.insert(END, button[0])
+            self.Info_Header_Name = selected
+
+            self.selected_category_source = "Head"
+
+    def on_select_sublist(self, event):
+        if self.Sub_listbox.curselection():
+            selected_index = self.Sub_listbox.curselection()[0]
+            selected = self.Sub_listbox.get(selected_index)
+            self.filter_list3(selected)
+
+            self.Info_Header_Name = selected
+
+            self.selected_category_source = "Sub"
+
+    def on_select_infoamtionlist(self, event):
+        if self.infomation_listbox.curselection():
+            selected_index = self.infomation_listbox.curselection()[0]
+            selected = self.infomation_listbox.get(selected_index)
+
+            self.Info_Header_Name = selected
+
+            self.selected_category_source = "Info"
+
+    def filter_list2(self, selected):
+        self.Sub_listbox.delete(0, END)
+        filtered_entries = [entry[1] for entry in self.Sub_table_categorys if entry[0] == selected]
+        for entry in filtered_entries:
+            self.Sub_listbox.insert(END, entry)
+
+            self.Info_Header_Name = selected
+
+    def filter_list3(self, selected):
+        self.infomation_listbox.delete(0, END)
+        filtered_entries = [entry[1] for entry in self.info_table_categorys if entry[0] == selected]
+        for entry in filtered_entries:
+            self.infomation_listbox.insert(END, entry)
+
+            self.Info_Header_Name = selected
 
     def select_file(self):
         self.input_change_frame.grab_set()
@@ -520,53 +640,143 @@ class ChangeWindow:
         self.selected_file = file_object
         self.input_change_frame.grab_release()
 
-    def update_databse(self):
-        new_button_name = self.new_button_name.get()
-        new_image_file = self.selected_file.name if self.selected_file else ""
-        new_category_type = self.new_category_type.get().lower()
+    def on_validate(self, char):
+        # Get the current content of the Text widget
+        current_text = self.new_old_Info_Sum_text.get("1.0", "end-1c")
 
-        if not new_button_name or not new_category_type:
-            messagebox.showerror("Error", "Please provide values for the new category")
+        if len(current_text) >= 1000:
+            self.mainroot.bell()  # Produces a system alert to notify the user (optional)
+            self.mainroot.after(10, self.show_error)  # Call show_error function after a slight delay
+
+                # Truncate the text to the desired length
+            self.new_old_Info_Sum_text.delete("1.1000", "end-1c")
+            return False
+
+        return True
+
+    def show_error(self):
+        self.error_label.config(text="Character limit reached", fg="red")
+
+    def clear_error(self):
+        self.error_label.config(text="")  # Clear the error message
+
+    def update_databse(self, *args):
+        # args should be a tuple containing the values you want to update
+        num_args = len(args)
+
+        if num_args < 2:
+            messagebox.showerror("Error", "At least two values are required for the update.")
             return
 
-        selected_button = self.listbox.get(self.listbox.curselection())
-        cur.execute("UPDATE Head_category SET Head_category_name=?, image_filename=?, category_type=? WHERE Head_category_name=?",
-                    (new_button_name, new_image_file, new_category_type, selected_button))
-        con.commit()
-
-        app.display_existing_buttons()
+        print("it works")
 
     def open_change_view(self):
-        selected_button = self.listbox.get(self.listbox.curselection())
+        selected_button = self.Info_Header_Name
+        print(selected_button)
 
-        cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category WHERE Head_category_name=?",
-                    (selected_button,))
+        if self.selected_category_source == "Head":
+            cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category WHERE Head_category_name=?",
+                        (selected_button,))
 
-        result = cur.fetchone()
+            result = cur.fetchone()
 
-        if result:
-            button_name, image_filename, category_type = result
+            if result:
+                button_name, image_filename, category_type = result
 
-            file_path = image_filename
-            file_name = os.path.basename(file_path)
+                file_path = image_filename
+                file_name = os.path.basename(file_path)
 
-            self.old_button_name.config(text=f"Head_category_name: {button_name}")
-            self.old_image_file.config(text=f"Image_filename: {file_name}")
-            self.old_category_type.config(text=f"category_type: {category_type}")
+                self.old_button_name.config(text=f"Head_category_name: {button_name}")
+                self.old_image_file.config(text=f"Image_filename: {file_name}")
+                self.old_category_type.config(text=f"category_type: {category_type}")
 
-        self.change_frame.pack_forget()
-        self.input_change_frame.pack()
-        self.input_change_label.grid(row=0, column=1)
+            self.change_frame.pack_forget()
+            self.input_change_frame.pack()
+            self.input_change_label.grid(row=0, column=1)
 
-        self.old_button_name.grid(row=1, column=0, pady=10)
-        self.old_image_file.grid(row=2, column=0, pady=10)
-        self.old_category_type.grid(row=3, column=0, pady=10)
+            self.old_button_name.grid(row=1, column=0, pady=10)
+            self.old_image_file.grid(row=2, column=0, pady=10)
+            self.old_category_type.grid(row=3, column=0, pady=10)
 
-        self.new_button_name.grid(row=1, column=2, pady=10)
-        self.new_image_file.grid(row=2, column=2, pady=10)
-        self.new_category_type.grid(row=3, column=2, pady=10)
+            self.new_button_name.grid(row=1, column=2, pady=10)
+            self.new_image_file.grid(row=2, column=2, pady=10)
+            self.new_category_type.grid(row=3, column=2, pady=10)
 
-        self.change_old_info_button.grid(row=4, column=1)
+            new_button_name = self.new_button_name.get()
+            new_image_filename = self.selected_file
+            new_category_type = self.new_category_type.get()
+
+
+            self.change_old_info_button.grid(row=4, column=1, command=lambda: self.update_databse(new_button_name, new_image_filename, new_category_type))
+            self.change_old_info_button.config(command=lambda: self.update_databse(new_button_name, new_image_filename, new_category_type))
+
+        elif self.selected_category_source == "Sub":
+            cur.execute("SELECT Sub_Category_name, image_filename FROM sub_category WHERE Sub_Category_name =?",
+                        (selected_button,))
+
+            result = cur.fetchone()
+
+            if result:
+                button_name, image_filename,  = result
+
+                file_path = image_filename
+                file_name = os.path.basename(file_path)
+
+                self.old_button_name.config(text=f"Sub_name: {button_name}")
+                self.old_image_file.config(text=f"Image_filename: {file_name}")
+
+            self.change_frame.pack_forget()
+            self.input_change_frame.pack()
+            self.input_change_label.grid(row=0, column=1)
+
+            self.old_button_name.grid(row=1, column=0, pady=10)
+            self.old_image_file.grid(row=2, column=0, pady=10)
+
+            self.new_button_name.grid(row=1, column=2, pady=10)
+            self.new_image_file.grid(row=2, column=2, pady=10)
+
+            new_category_name = self.new_button_name.get()
+            new_image_filename = self.selected_file
+
+            self.change_old_info_button.grid(row=4, column=1)
+            self.change_old_info_button.config(command=lambda: self.update_databse(new_category_name, new_image_filename))
+
+        elif self.selected_category_source == "Info":
+            self.change_window.geometry("1600x800")
+            cur.execute("SELECT Info_name, Info_Sum_text, Info_Full_text FROM category_Infomation WHERE Info_name=?",
+                        (selected_button,))
+
+            result = cur.fetchone()
+
+            if result:
+                button_name, Sum_text, Full_text = result
+                self.old_button_name.config(text=f"Info name: {button_name}")
+                self.new_old_Info_Sum_text.insert("1.0", Sum_text)
+                self.new_old_Info_full_text.insert("1.0", Full_text)
+
+            self.change_frame.pack_forget()
+            self.input_change_frame.pack()
+            self.input_change_label.grid(row=0, column=1)
+
+            self.old_button_name.grid(row=1, column=0, pady=10)
+            self.new_old_Info_Sum_label.grid(row=2, column=0, pady=10)
+            self.new_old_Info_Sum_text.grid(row=3, column=0, padx=10)
+            self.new_old_Info_Sum_text.config(yscrollcommand=self.new_old_Info_sum_scrollbar.set)
+            self.error_label.grid(row=5, column=0)
+
+            self.new_button_name.grid(row=1, column=2, pady=10)
+            self.new_old_Info_full_label.grid(row=2, column=2, pady=10)
+            self.new_old_Info_full_text.grid(row=3, column=2, sticky="nsew")
+            self.new_old_Info_full_scrollbar.grid(row=3, column=3, sticky="ns")
+
+            new_info_name = self.new_button_name.get()
+            new_Sum_text = self.new_old_Info_Sum_text.get("1.0", "end-1c")
+            new_Full_text = self.new_old_Info_full_text.get("1.0", "end-1c")
+
+            self.change_old_info_button.grid(row=4, column=1)
+            self.change_old_info_button.config(command=lambda: self.update_databse(new_info_name, new_Sum_text, new_Full_text))
+
+
 
 
 class DeleteWindow:
