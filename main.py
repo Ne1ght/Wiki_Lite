@@ -448,6 +448,8 @@ class ChangeWindow:
 
         self.Info_Header_Name = None
 
+        self.selected_file = None
+
         validate_cmd = self.mainroot.register(self.on_validate)
 
         self.change_window = Toplevel(self.mainroot)
@@ -660,15 +662,95 @@ class ChangeWindow:
     def clear_error(self):
         self.error_label.config(text="")  # Clear the error message
 
-    def update_databse(self, *args):
-        # args should be a tuple containing the values you want to update
-        num_args = len(args)
+    def update_databse(self, file_source, selected_button):
+        self.file_source = file_source
+        print(selected_button)
 
-        if num_args < 2:
-            messagebox.showerror("Error", "At least two values are required for the update.")
-            return
+        # Process the values based on the number of arguments
+        if self.file_source == "Head":
+            new_Head_name = None
+            new_Head_name = self.new_button_name.get()
 
-        print("it works")
+            if not new_Head_name:
+                cur.execute("SELECT Head_category_name FROM Head_category WHERE Head_category_name=?",
+                            (selected_button,))
+                new_Head_name = cur.fetchone()
+
+
+            new_Image_path = None
+            new_Image_path = self.selected_file
+
+            if not new_Image_path:
+                cur.execute("SELECT image_filename FROM Head_category WHERE Head_category_name=?",
+                            (selected_button,))
+                new_Image_path = cur.fetchone()
+
+
+            new_category_type = None
+            new_category_type = self.new_category_type.get()
+
+            if not new_category_type:
+                cur.execute("SELECT category_type FROM Head_category WHERE Head_category_name=?",
+                            (selected_button,))
+                new_category_type = cur.fetchone()
+
+            print(new_Head_name)
+            print(new_Image_path)
+            print(new_category_type)
+
+            cur.execute("UPDATE Head_category SET Head_category_name=?, image_filename=?, category_type=?",
+                        (new_Head_name, new_Image_path, new_category_type))
+            con.commit()
+
+        elif self.file_source == "Sub":
+            new_Sub_name = None
+            new_Sub_name = self.new_button_name.get()
+
+            if not new_Sub_name:
+                cur.execute("SELECT Sub_Category_name FROM sub_category WHERE Sub_Category_name=?",
+                            (selected_button,))
+                new_Sub_name = cur.fetchone()
+
+            new_Image_path = None
+            new_Image_path = self.selected_file
+
+            if not new_Image_path:
+                cur.execute("SELECT image_filename FROM sub_category WHERE Sub_Category_name=?",
+                            (selected_button,))
+                new_Image_path = cur.fetchone()
+
+            print(new_Sub_name)
+            print(new_Image_path)
+        elif self.file_source == "Info":
+            new_Info_name = None
+            new_Info_name = self.new_button_name.get()
+
+            if not new_Info_name:
+                cur.execute("SELECT Info_name FROM category_Infomation WHERE Info_name=?",
+                            (selected_button,))
+                new_Info_name = cur.fetchone()
+
+            new_Sum_text = None
+            new_Sum_text = self.new_old_Info_Sum_text.get("1.0", "end-1c")
+
+            if not new_Sum_text:
+                cur.execute("SELECT Info_Sum_Text FROM category_Infomation WHERE Info_name=?",
+                            (selected_button,))
+                new_Sum_text = cur.fetchone()
+
+            new_Full_text = None
+            new_Full_text = self.new_old_Info_full_text.get("1.0", "end-1c")
+
+            if not new_Full_text:
+                cur.execute("SELECT Info_Full_Text FROM category_Infomation WHERE Info_name=?",
+                            (selected_button,))
+                new_Full_text = cur.fetchone()
+
+            print(new_Info_name)
+            print(new_Sum_text)
+            print(new_Full_text)
+        else:
+            messagebox.showerror("Error", "Das ist ungewöhnliches verhalten des programmes bitte melden sie sich beim admin!")
 
     def open_change_view(self):
         selected_button = self.Info_Header_Name
@@ -702,13 +784,11 @@ class ChangeWindow:
             self.new_image_file.grid(row=2, column=2, pady=10)
             self.new_category_type.grid(row=3, column=2, pady=10)
 
-            new_button_name = self.new_button_name.get()
-            new_image_filename = self.selected_file
-            new_category_type = self.new_category_type.get()
+            file_source = self.selected_category_source
 
 
-            self.change_old_info_button.grid(row=4, column=1, command=lambda: self.update_databse(new_button_name, new_image_filename, new_category_type))
-            self.change_old_info_button.config(command=lambda: self.update_databse(new_button_name, new_image_filename, new_category_type))
+            self.change_old_info_button.grid(row=4, column=1)
+            self.change_old_info_button.config(command=lambda: self.update_databse(file_source, selected_button))
 
         elif self.selected_category_source == "Sub":
             cur.execute("SELECT Sub_Category_name, image_filename FROM sub_category WHERE Sub_Category_name =?",
@@ -735,11 +815,10 @@ class ChangeWindow:
             self.new_button_name.grid(row=1, column=2, pady=10)
             self.new_image_file.grid(row=2, column=2, pady=10)
 
-            new_category_name = self.new_button_name.get()
-            new_image_filename = self.selected_file
+            file_source = self.selected_category_source
 
             self.change_old_info_button.grid(row=4, column=1)
-            self.change_old_info_button.config(command=lambda: self.update_databse(new_category_name, new_image_filename))
+            self.change_old_info_button.config(command=lambda: self.update_databse(file_source, selected_button))
 
         elif self.selected_category_source == "Info":
             self.change_window.geometry("1600x800")
@@ -769,12 +848,10 @@ class ChangeWindow:
             self.new_old_Info_full_text.grid(row=3, column=2, sticky="nsew")
             self.new_old_Info_full_scrollbar.grid(row=3, column=3, sticky="ns")
 
-            new_info_name = self.new_button_name.get()
-            new_Sum_text = self.new_old_Info_Sum_text.get("1.0", "end-1c")
-            new_Full_text = self.new_old_Info_full_text.get("1.0", "end-1c")
+            file_source = self.selected_category_source
 
             self.change_old_info_button.grid(row=4, column=1)
-            self.change_old_info_button.config(command=lambda: self.update_databse(new_info_name, new_Sum_text, new_Full_text))
+            self.change_old_info_button.config(command=lambda: self.update_databse(file_source, selected_button))
 
 
 
