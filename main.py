@@ -666,6 +666,7 @@ class ChangeWindow:
         self.file_source = file_source
         print(selected_button)
 
+
         # Process the values based on the number of arguments
         if self.file_source == "Head":
             new_Head_name = None
@@ -678,7 +679,8 @@ class ChangeWindow:
 
 
             new_Image_path = None
-            new_Image_path = self.selected_file
+            new_Image_path = self.selected_file.name
+
 
             if not new_Image_path:
                 cur.execute("SELECT image_filename FROM Head_category WHERE Head_category_name=?",
@@ -698,8 +700,8 @@ class ChangeWindow:
             print(new_Image_path)
             print(new_category_type)
 
-            cur.execute("UPDATE Head_category SET Head_category_name=?, image_filename=?, category_type=?",
-                        (new_Head_name, new_Image_path, new_category_type))
+            cur.execute("UPDATE Head_category SET Head_category_name=?, image_filename=?, category_type=? WHERE Head_category_name=?",
+                        (new_Head_name, new_Image_path, new_category_type, selected_button))
             con.commit()
 
         elif self.file_source == "Sub":
@@ -712,7 +714,7 @@ class ChangeWindow:
                 new_Sub_name = cur.fetchone()
 
             new_Image_path = None
-            new_Image_path = self.selected_file
+            new_Image_path = self.selected_file.name
 
             if not new_Image_path:
                 cur.execute("SELECT image_filename FROM sub_category WHERE Sub_Category_name=?",
@@ -722,8 +724,8 @@ class ChangeWindow:
             print(new_Sub_name)
             print(new_Image_path)
 
-            cur.execute("UPDATE sub_category SET Sub_Category_name=?, image_filename=?",
-                        (new_Sub_name, new_Image_path))
+            cur.execute("UPDATE sub_category SET Sub_Category_name=?, image_filename=? WHERE Sub_Category_name=?",
+                        (new_Sub_name, new_Image_path, selected_button))
             con.commit()
 
         elif self.file_source == "Info":
