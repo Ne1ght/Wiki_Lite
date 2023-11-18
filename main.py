@@ -721,6 +721,11 @@ class ChangeWindow:
 
             print(new_Sub_name)
             print(new_Image_path)
+
+            cur.execute("UPDATE sub_category SET Sub_Category_name=?, image_filename=?",
+                        (new_Sub_name, new_Image_path))
+            con.commit()
+
         elif self.file_source == "Info":
             new_Info_name = None
             new_Info_name = self.new_button_name.get()
@@ -749,6 +754,10 @@ class ChangeWindow:
             print(new_Info_name)
             print(new_Sum_text)
             print(new_Full_text)
+
+            cur.execute("UPDATE category_infomation SET Info_name=?, Info_Sum_Text=?, Info_Full_Text=? WHERE Info_name=?",
+                        (new_Info_name, new_Sum_text, new_Full_text, selected_button))
+            con.commit()
         else:
             messagebox.showerror("Error", "Das ist ungewöhnliches verhalten des programmes bitte melden sie sich beim admin!")
 
