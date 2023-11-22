@@ -1229,6 +1229,8 @@ def switch_to_frame(frame_name, sub_content_frame):
         else:
             frame.pack(fill=BOTH, expand=True)
 
+
+
 # main window for the wiegets and frames
 class MainWindow:
     def __init__(self, root_window):
@@ -1325,7 +1327,8 @@ class MainWindow:
                                 text=button_name,
                                 font=("Myriad Pro", 25),
                                 image=photo_resized,
-                                compound="left"
+                                compound="left",
+                                command=lambda category_name=button_name, category_image=photo_resized: self.open_infomation(category_name, category_image)
                                 )
                 button.grid(row=r, column=c, padx=50, pady=50)
 
@@ -1347,6 +1350,12 @@ class MainWindow:
         self.content_frame.pack_forget()
 
         open_sub_category = sub_categorys(self.mainroot, category_name, category_image)
+
+    def open_infomation(self, category_name, category_image):
+        self.main_frame.pack_forget()
+        self.content_frame.pack_forget()
+
+        open_infomation = display_infomation(self.mainroot, category_name, category_image)
 
 class sub_categorys:
     def __init__(self, root_window, category_name, category_image):
@@ -1379,6 +1388,12 @@ class sub_categorys:
 
         self.display_existing_subcategory(category_name)
 
+    def open_infomation(self, category_name, category_image):
+        self.category_frame.pack_forget()
+        self.sub_content_frame.pack_forget()
+
+        open_infomation = display_infomation(self.mainroot, category_name, category_image)
+
     def display_existing_subcategory(self, category_name):
         for widget in self.sub_content_frame.winfo_children():
             widget.destroy()
@@ -1393,6 +1408,8 @@ class sub_categorys:
             ''', (Header_Info_name_to_check,))
 
         result = cur.fetchall()
+
+
 
         # Function to check the presence of the desired value in the dataset
         def check_desired_value(dataset, desired_value):
@@ -1428,6 +1445,8 @@ class sub_categorys:
                             font=("Myriad Pro", 25),
                             image=photo_resized,
                             compound="left",
+                            command=lambda category_name=Sub_Category_name, category_image=photo_resized: self.open_infomation(category_name, category_image)
+
                             )
             button.grid(row=r, column=c, padx=50, pady=50)
 
@@ -1445,9 +1464,86 @@ class sub_categorys:
                 r += 1
 
 
+
+
 class display_infomation:
-    def __init__(self):
-        pass
+    def __init__(self, root_window, category_name, category_image):
+
+        self.mainroot = root_window
+        self.category_frame = Frame(self.mainroot)
+        self.category_frame.pack()
+        add_frame(category_name, self.category_frame)
+        # print is for the name to which the button retunes the old frame that was called befor
+        print(category_name)
+
+        self.created_Info_category = {}
+
+        self.category_label = Label(self.category_frame,
+                                    text=category_name,
+                                    font=("Myriad Pro", 40),
+                                    relief=RAISED,
+                                    compound="left",
+                                    image=category_image)
+        self.category_label.pack()
+
+        self.back_button = Button(self.category_frame,
+                                  text="Main Menu",
+                                  font=("Myriad Pro", 30),
+                                  relief=RAISED,
+                                  command=lambda: switch_to_frame(self.category_frame, self.sub_content_frame),
+                                  )
+        self.back_button.pack()
+
+        self.sub_content_frame = Frame(self.mainroot)
+        self.sub_content_frame.pack(fill=BOTH, expand=True)
+
+        self.display_existing_Infoamtion(category_name)
+
+    def display_existing_Infoamtion(self, category_name):
+        for widget in self.sub_content_frame.winfo_children():
+            widget.destroy()
+
+        Header_Info_name_to_check = category_name
+
+        cur.execute("SELECT Header_info_name, Info_name FROM category_Infomation WHERE Header_info_name=?",
+                    (Header_Info_name_to_check,))
+        extracted_values = cur.fetchall()
+
+        print(extracted_values)
+
+        num_row = 3
+        num_column = 5
+
+        r = 0
+        c = 0
+
+        for button_data in extracted_values:
+            Header_Info_name, Info_name= button_data
+
+            button = Button(self.sub_content_frame,
+                            text=Info_name,
+                            font=("Myriad Pro", 25),
+                            compound="left",
+                            command=lambda: self.open_Infomation_text(Header_Info_name, Info_name)
+                            )
+            button.grid(row=r, column=c, padx=50, pady=50)
+
+            # Store information about the created button
+            self.created_Info_category[Info_name] = {
+                'Header_Category': Header_Info_name,
+                'Info_Category': Info_name,
+            }
+
+            # Increment row and column counters
+            c += 1
+            if c >= num_column:
+                c = 0
+                r += 1
+
+    def open_Infomation_text(self, Header_Info_name, Info_name):
+        print("True")
+
+
 
 
 if __name__ == "__main__":
