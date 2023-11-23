@@ -1524,7 +1524,7 @@ class display_infomation:
                             text=Info_name,
                             font=("Myriad Pro", 25),
                             compound="left",
-                            command=lambda: self.open_Infomation_text(Header_Info_name, Info_name)
+                            command=lambda header_info=Header_Info_name, info=Info_name: self.open_Infomation_text(header_info, info)
                             )
             button.grid(row=r, column=c, padx=50, pady=50)
 
@@ -1541,7 +1541,77 @@ class display_infomation:
                 r += 1
 
     def open_Infomation_text(self, Header_Info_name, Info_name):
-        print("True")
+
+        cur.execute("SELECT Header_Info_name, Info_name, Info_Sum_text, Info_Full_text FROM category_Infomation WHERE Header_Info_name=? AND Info_name=?",
+                    (Header_Info_name, Info_name))
+
+        result = cur.fetchone()
+
+        Summery_Text = result[2]
+
+        print(Summery_Text)
+
+        self.category_frame.pack_forget()
+        self.sub_content_frame.pack_forget()
+
+        self.Infomation_category = Frame(self.mainroot)
+        self.Infomation_category.pack(pady=15)
+        add_frame(Info_name, self.Infomation_category)
+
+        self.created_Infomation_category = {}
+
+        self.category_label = Label(self.Infomation_category,
+                                    text=Info_name,
+                                    font=("Myriad Pro", 40),
+                                    relief=RAISED,
+                                    compound="left",
+                                    )
+        self.category_label.pack()
+
+        self.back_button = Button(self.Infomation_category,
+                                  text=Header_Info_name,
+                                  font=("Myriad Pro", 30),
+                                  relief=RAISED,
+                                  command=lambda: switch_to_frame(self.category_frame, self.sub_content_frame),
+                                  )
+        self.back_button.pack(side="left")
+
+        self.go_to_Full_button = Button(self.Infomation_category,
+                                        text="Full Version",
+                                        font=("Myriad Pro", 30),
+                                        relief=RAISED)
+        self.go_to_Full_button.pack(side="right")
+
+        self.Info_sum_content_frame = Frame(self.mainroot)
+        self.Info_sum_content_frame.pack(fill=BOTH, expand=True)
+
+        self.Info_sum_text = Text(self.Info_sum_content_frame,
+                                  wrap="word",
+                                  height=50,
+                                  width=210
+                                  )
+        self.Info_sum_text.grid(row=0, column=0, sticky="nsew")
+
+        self.Info_sum_scrollbar = Scrollbar(self.Info_sum_content_frame,
+                                            command=self.Info_sum_text.yview
+                                            )
+        self.Info_sum_scrollbar.grid(row=0, column=1, sticky="ns")
+
+        self.Info_sum_text.insert("1.0", Summery_Text)
+
+        self.Info_sum_text.config(yscrollcommand=self.Info_sum_scrollbar.set)
+        self.Info_sum_text.config(state="disabled")
+
+        self.Info_sum_content_frame.columnconfigure(0, weight=0)
+
+
+
+
+
+
+
+
+
 
 
 
