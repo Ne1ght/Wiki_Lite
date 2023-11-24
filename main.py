@@ -236,12 +236,12 @@ class AddWindow:
         # Get the current content of the Text widget
         current_text = self.add_Infomation_sum_Text.get("1.0", "end-1c")
 
-        if len(current_text) >= 1000:
+        if len(current_text) >= 600:
             self.mainroot.bell()  # Produces a system alert to notify the user (optional)
             self.mainroot.after(10, self.show_error)  # Call show_error function after a slight delay
 
             # Truncate the text to the desired length
-            self.add_Infomation_sum_Text.delete("1.1000", "end-1c")
+            self.add_Infomation_sum_Text.delete("1.600", "end-1c")
             return False
 
         return True
@@ -1549,7 +1549,7 @@ class display_infomation:
 
         Summery_Text = result[2]
 
-        print(Summery_Text)
+        Full_Text = result[3]
 
         self.category_frame.pack_forget()
         self.sub_content_frame.pack_forget()
@@ -1579,7 +1579,9 @@ class display_infomation:
         self.go_to_Full_button = Button(self.Infomation_category,
                                         text="Full Version",
                                         font=("Myriad Pro", 30),
-                                        relief=RAISED)
+                                        relief=RAISED,
+                                        command=lambda Full_text=Full_Text: self.show_full_version(Full_text)
+                                        )
         self.go_to_Full_button.pack(side="right")
 
         self.Info_sum_content_frame = Frame(self.mainroot)
@@ -1588,7 +1590,8 @@ class display_infomation:
         self.Info_sum_text = Text(self.Info_sum_content_frame,
                                   wrap="word",
                                   height=50,
-                                  width=210
+                                  width=200,
+                                  font=("Myriad Pro", 30)
                                   )
         self.Info_sum_text.grid(row=0, column=0, sticky="nsew")
 
@@ -1602,7 +1605,33 @@ class display_infomation:
         self.Info_sum_text.config(yscrollcommand=self.Info_sum_scrollbar.set)
         self.Info_sum_text.config(state="disabled")
 
-        self.Info_sum_content_frame.columnconfigure(0, weight=0)
+        self.Info_sum_content_frame.columnconfigure(0, weight=1)
+
+
+
+    def show_full_version(self, Full_text):
+
+        self.Info_sum_text.grid_forget()
+        self.Info_sum_scrollbar.grid_forget()
+        self.go_to_Full_button.pack_forget()
+
+        self.Info_full_text = Text(self.Info_sum_content_frame,
+                                   wrap="word",
+                                   height=50,
+                                   width=200,
+                                   font=("Myriad Pro", 30)
+                                   )
+        self.Info_full_scrollbar = Scrollbar(self.Info_sum_content_frame)
+
+        self.Info_full_text.grid(row=0, column=0, sticky="nsew")
+        self.Info_full_scrollbar.grid(row=0, column=1, sticky="ns")
+
+        self.Info_full_text.insert("1.0", Full_text)
+
+        self.Info_full_text.config(yscrollcommand=self.Info_full_scrollbar.set)
+        self.Info_sum_text.config(state="disabled")
+
+        self.Info_sum_content_frame.columnconfigure(0, weight=1)
 
 
 
