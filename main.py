@@ -1616,6 +1616,14 @@ class display_infomation:
         self.Info_sum_scrollbar.grid_forget()
         self.go_to_Full_button.pack_forget()
 
+        self.go_to_Sum_button = Button(self.Infomation_category,
+                                        text="Sum Version",
+                                        font=("Myriad Pro", 30),
+                                        relief=RAISED,
+                                        command=self.go_back_to_sum
+                                        )
+        self.go_to_Sum_button.pack(side="right")
+
         self.Info_full_text = Text(self.Info_sum_content_frame,
                                    wrap="word",
                                    height=50,
@@ -1633,6 +1641,15 @@ class display_infomation:
         self.Info_sum_text.config(state="disabled")
 
         self.Info_sum_content_frame.columnconfigure(0, weight=1)
+
+    def go_back_to_sum(self):
+        self.go_to_Sum_button.pack_forget()
+        self.Info_full_text.grid_forget()
+        self.Info_full_scrollbar.grid_forget()
+
+        self.go_to_Full_button.pack(side="right")
+        self.Info_sum_text.grid(row=0, column=0, sticky="nsew")
+        self.Info_sum_scrollbar.grid(row=0, column=1, sticky="ns")
 
 
 
