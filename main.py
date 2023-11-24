@@ -1235,7 +1235,7 @@ def switch_to_frame(frame_name, sub_content_frame):
 class MainWindow:
     def __init__(self, root_window):
         self.mainroot = root_window
-        self.mainroot.title("BOC LEITFADEN")
+        self.mainroot.title("Wiki Lite")
         self.mainroot.geometry("2560x1600")
         self.mainroot.state("zoomed")
 
@@ -1258,7 +1258,7 @@ class MainWindow:
         self.main_frame.pack()
 
         self.main_label = Label(self.main_frame,
-                           text="BOC LEITFADEN",
+                           text="Wiki Lite",
                            font=("Myriad Pro", 40, "bold", "underline"),
                            relief=RAISED,
                            image=self.BOC_Main_icon,
@@ -1266,6 +1266,7 @@ class MainWindow:
                            bd=10,
                            padx=10,
                            pady=10,
+                           width=425
                            )
         self.main_label.pack()
 
