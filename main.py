@@ -1224,7 +1224,6 @@ def switch_to_frame(frame_name, sub_content_frame):
     for name, frame in frames.items():
         if name != frame_name:
             frame.pack_forget()
-            MainWindow(root_window)
             sub_content_frame.pack_forget()
         else:
             frame.pack(fill=BOTH, expand=True)
