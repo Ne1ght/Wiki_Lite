@@ -1213,20 +1213,13 @@ class LoginFrame:
         add_window = AddWindow(self.mainroot)
 
 
-frames = {}
 
-def add_frame(frame_name, frame):
-    global frames
-    frames[frame_name] = frame
 
 # Zwischen Notiz Funktion so umschreiben das sich der letzte frame/classe gemerkt wird um den dan wirder zu callen
-def switch_to_frame(frame_name, sub_content_frame):
-    for name, frame in frames.items():
-        if name != frame_name:
-            frame.pack_forget()
-            sub_content_frame.pack_forget()
-        else:
-            frame.pack(fill=BOTH, expand=True)
+def switch_to_frame(current_frame, current_content_frame):
+    current_frame.pack_forget()
+    current_content_frame.pack_forget()
+
 
 
 
@@ -1302,7 +1295,7 @@ class MainWindow:
                                 font=("Myriad Pro", 25),
                                 image=photo_resized,
                                 compound="left",
-                                command=lambda category_name=button_name, category_image=photo_resized: self.open_category(category_name, category_image)
+                                command=lambda category_name=button_name, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_category(category_name, category_image, old_frame, old_content_frame)
                                 )
                 button.grid(row=r, column=c, padx=50, pady=50)
 
@@ -1328,7 +1321,7 @@ class MainWindow:
                                 font=("Myriad Pro", 25),
                                 image=photo_resized,
                                 compound="left",
-                                command=lambda category_name=button_name, category_image=photo_resized: self.open_infomation(category_name, category_image)
+                                command=lambda category_name=button_name, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame)
                                 )
                 button.grid(row=r, column=c, padx=50, pady=50)
 
@@ -1345,25 +1338,25 @@ class MainWindow:
                     c = 0
                     r += 1
 
-    def open_category(self, category_name, category_image):
+    def open_category(self, category_name, category_image, old_frame, old_content_frame):
         self.main_frame.pack_forget()
         self.content_frame.pack_forget()
 
-        open_sub_category = sub_categorys(self.mainroot, category_name, category_image)
+        open_sub_category = sub_categorys(self.mainroot, category_name, category_image, old_frame, old_content_frame)
 
-    def open_infomation(self, category_name, category_image):
+    def open_infomation(self, category_name, category_image, old_frame, old_content_frame):
         self.main_frame.pack_forget()
         self.content_frame.pack_forget()
 
-        open_infomation = display_infomation(self.mainroot, category_name, category_image)
+        open_infomation = display_infomation(self.mainroot, category_name, category_image, old_frame, old_content_frame)
 
 class sub_categorys:
-    def __init__(self, root_window, category_name, category_image):
+    def __init__(self, root_window, category_name, category_image, old_frame, old_content_frame):
 
         self.mainroot = root_window
         self.category_frame = Frame(self.mainroot)
         self.category_frame.pack()
-        add_frame(category_name, self.category_frame)
+
 
         self.created_sub_category = {}
 
@@ -1379,7 +1372,7 @@ class sub_categorys:
                                   text="Main Menu",
                                   font=("Myriad Pro", 30),
                                   relief=RAISED,
-                                  command=lambda: switch_to_frame(self.category_frame, self.sub_content_frame),
+                                  command=lambda old_frame=old_frame, old_content_frame=old_content_frame: self.open_MainWindow(old_frame, old_content_frame),
                                   )
         self.back_button.pack()
 
@@ -1388,11 +1381,18 @@ class sub_categorys:
 
         self.display_existing_subcategory(category_name)
 
-    def open_infomation(self, category_name, category_image):
+    def open_infomation(self, category_name, category_image, old_frame, old_content_frame):
         self.category_frame.pack_forget()
         self.sub_content_frame.pack_forget()
 
-        open_infomation = display_infomation(self.mainroot, category_name, category_image)
+        open_infomation = display_infomation(self.mainroot, category_name, category_image, old_frame, old_content_frame)
+
+    def open_MainWindow(self, old_frame, old_content_frame):
+        self.category_frame.pack_forget()
+        self.sub_content_frame.pack_forget()
+
+        old_frame.pack()
+        old_content_frame.pack()
 
     def display_existing_subcategory(self, category_name):
         for widget in self.sub_content_frame.winfo_children():
@@ -1445,7 +1445,7 @@ class sub_categorys:
                             font=("Myriad Pro", 25),
                             image=photo_resized,
                             compound="left",
-                            command=lambda category_name=Sub_Category_name, category_image=photo_resized: self.open_infomation(category_name, category_image)
+                            command=lambda category_name=Sub_Category_name, category_image=photo_resized, old_frame=self.category_frame, old_content_frame=self.sub_content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame)
 
                             )
             button.grid(row=r, column=c, padx=50, pady=50)
@@ -1464,17 +1464,15 @@ class sub_categorys:
                 r += 1
 
 
-
-
 class display_infomation:
-    def __init__(self, root_window, category_name, category_image):
+    def __init__(self, root_window, category_name, category_image, old_frame, old_content_frame):
 
         self.mainroot = root_window
         self.category_frame = Frame(self.mainroot)
         self.category_frame.pack()
-        add_frame(category_name, self.category_frame)
-        # print is for the name to which the button retunes the old frame that was called befor
-        print(category_name)
+
+        self.sub_content_frame = Frame(self.mainroot)
+        self.sub_content_frame.pack(fill=BOTH, expand=True)
 
         self.created_Info_category = {}
 
@@ -1490,14 +1488,20 @@ class display_infomation:
                                   text="Main Menu",
                                   font=("Myriad Pro", 30),
                                   relief=RAISED,
-                                  command=lambda: switch_to_frame(self.category_frame, self.sub_content_frame),
+                                  command=lambda current_frame=self.category_frame, current_content_frame=self.sub_content_frame, old_frame=old_frame, old_content_frame=old_content_frame: self.go_back_to_previous(current_frame, current_content_frame, old_frame, old_content_frame)
                                   )
         self.back_button.pack()
 
-        self.sub_content_frame = Frame(self.mainroot)
-        self.sub_content_frame.pack(fill=BOTH, expand=True)
+
 
         self.display_existing_Infoamtion(category_name)
+
+    def go_back_to_previous(self, current_frame, current_content_frame, old_frame, old_content_frame):
+        current_frame.pack_forget()
+        current_content_frame.pack_forget()
+
+        old_frame.pack()
+        old_content_frame.pack()
 
     def display_existing_Infoamtion(self, category_name):
         for widget in self.sub_content_frame.winfo_children():
@@ -1524,7 +1528,7 @@ class display_infomation:
                             text=Info_name,
                             font=("Myriad Pro", 25),
                             compound="left",
-                            command=lambda header_info=Header_Info_name, info=Info_name: self.open_Infomation_text(header_info, info)
+                            command=lambda header_info=Header_Info_name, info=Info_name, category_frame=self.category_frame, sub_content_frame=self.sub_content_frame: self.open_Infomation_text(header_info, info, category_frame, sub_content_frame)
                             )
             button.grid(row=r, column=c, padx=50, pady=50)
 
@@ -1540,7 +1544,15 @@ class display_infomation:
                 c = 0
                 r += 1
 
-    def open_Infomation_text(self, Header_Info_name, Info_name):
+    def Back_to_Infomation_name(self, current_frame, current_content_frame, new_frame, new_content_frame):
+        current_frame.pack_forget()
+        current_content_frame.pack_forget()
+
+        new_frame.pack()
+        new_content_frame.pack()
+
+
+    def open_Infomation_text(self, Header_Info_name, Info_name, category_name, sub_content_name):
 
         cur.execute("SELECT Header_Info_name, Info_name, Info_Sum_text, Info_Full_text FROM category_Infomation WHERE Header_Info_name=? AND Info_name=?",
                     (Header_Info_name, Info_name))
@@ -1556,7 +1568,10 @@ class display_infomation:
 
         self.Infomation_category = Frame(self.mainroot)
         self.Infomation_category.pack(pady=15)
-        add_frame(Info_name, self.Infomation_category)
+
+        self.Info_sum_content_frame = Frame(self.mainroot)
+        self.Info_sum_content_frame.pack(fill=BOTH, expand=True)
+
 
         self.created_Infomation_category = {}
 
@@ -1572,7 +1587,7 @@ class display_infomation:
                                   text=Header_Info_name,
                                   font=("Myriad Pro", 30),
                                   relief=RAISED,
-                                  command=lambda: switch_to_frame(self.category_frame, self.sub_content_frame),
+                                  command=lambda current_frame=self.Infomation_category, current_content_frame=self.Info_sum_content_frame, new_frame=category_name, new_conent_frame=sub_content_name: self.Back_to_Infomation_name(current_frame, current_content_frame, new_frame, new_conent_frame)
                                   )
         self.back_button.pack(side="left")
 
@@ -1584,8 +1599,7 @@ class display_infomation:
                                         )
         self.go_to_Full_button.pack(side="right")
 
-        self.Info_sum_content_frame = Frame(self.mainroot)
-        self.Info_sum_content_frame.pack(fill=BOTH, expand=True)
+
 
         self.Info_sum_text = Text(self.Info_sum_content_frame,
                                   wrap="word",
