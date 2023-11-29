@@ -1265,6 +1265,12 @@ class MainWindow:
         self.mainroot.geometry("2560x1600")
         self.mainroot.state("zoomed")
 
+        cwd = os.getcwd()
+        files=os.listdir(cwd)
+
+        print("Current Working Directory:", os.getcwd())
+        print(files)
+
         folder_name = "Images"
         image_file_name = "BOC_Leasing.png"
 
@@ -1272,13 +1278,21 @@ class MainWindow:
         self.created_buttons_info = {}
         self.created_subcategory_ingo = {}
 
-        script_dir = os.path.dirname(__file__)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
 
         image_path = os.path.join(script_dir, folder_name, image_file_name)
 
-        img = Image.open(image_path)
-        photo_resized = img.resize((160, 160), PIL.Image.LANCZOS)
-        self.BOC_Main_icon = ImageTk.PhotoImage(photo_resized)
+        print(image_path)
+
+        try:
+            img = Image.open(image_path)
+            photo_resized = img.resize((160, 160), Image.LANCZOS)
+            self.BOC_Main_icon = ImageTk.PhotoImage(photo_resized)
+        except FileNotFoundError as e:
+            print(f"Error opening image: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
 
         self.main_frame = Frame(self.mainroot)
         self.main_frame.pack()

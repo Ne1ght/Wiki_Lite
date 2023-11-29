@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('C:\\Users\\Maxim\\PycharmProjects\\RE BOC Leitfaden\\Images', 'Images')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
