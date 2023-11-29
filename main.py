@@ -1,10 +1,44 @@
 import os
+import sys
+import subprocess
+from pathlib import Path
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 import PIL.Image
 from PIL import Image, ImageTk
 import sqlite3
+
+
+def create_virtualenv(venv_path):
+    subprocess.run([sys.executable, "-m", "venv", str(venv_path)])
+
+def install_dependencies(venv_path):
+    subprocess.run([str(venv_path / "bin" / "pip"), "install", "-r", "requirements.txt"])
+
+def setup_environment(venv_path):
+    if not venv_path.is_dir():
+        create_virtualenv(venv_path)
+        install_dependencies(venv_path)
+
+    # Create a marker file to indicate that setup is completed
+    Path("setup_completed.marker").touch()
+
+def check_previous_setup():
+    # Check for the marker file
+    return Path("setup_completed.marker").is_file()
+
+def main():
+    # Determine the virtual environment path
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        # If in a virtual environment, use sys.prefix
+        venv_path = Path(sys.prefix)
+    else:
+        # If not in a virtual environment, use the current working directory
+        venv_path = Path.cwd()
+
+    if not check_previous_setup():
+        setup_environment(venv_path)
 
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
@@ -1677,6 +1711,7 @@ class display_infomation:
 
 
 if __name__ == "__main__":
+    main()
     root_window = Tk()
     app = MainWindow(root_window)
     root_window.mainloop()

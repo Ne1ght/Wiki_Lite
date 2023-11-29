@@ -1,5 +1,0 @@
-this is	
-
-placeholder 4 text to see
-
-how it would work in tk

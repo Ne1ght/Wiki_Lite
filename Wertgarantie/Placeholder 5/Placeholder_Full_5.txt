@@ -1,7 +1,0 @@
-this is placehodler 5
-
-text for the full version
-
-of the txt file in
-
-the tkinter programm
