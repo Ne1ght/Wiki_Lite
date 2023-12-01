@@ -1,10 +1,44 @@
-import os
+import  os
+import sys
+import subprocess
+from pathlib import Path
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 import PIL.Image
 from PIL import Image, ImageTk
 import sqlite3
+
+
+def create_virtualenv(venv_path):
+    subprocess.run([sys.executable, "-m", "venv", str(venv_path)])
+
+def install_dependencies(venv_path):
+    subprocess.run([str(venv_path / "bin" / "pip"), "install", "-r", "requirements.txt"])
+
+def setup_environment(venv_path):
+    if not venv_path.is_dir():
+        create_virtualenv(venv_path)
+        install_dependencies(venv_path)
+
+    # Create a marker file to indicate that setup is completed
+    Path("setup_completed.marker").touch()
+
+def check_previous_setup():
+    # Check for the marker file
+    return Path("setup_completed.marker").is_file()
+
+def main():
+    # Determine the virtual environment path
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        # If in a virtual environment, use sys.prefix
+        venv_path = Path(sys.prefix)
+    else:
+        # If not in a virtual environment, use the current working directory
+        venv_path = Path.cwd()
+
+    if not check_previous_setup():
+        setup_environment(venv_path)
 
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
@@ -868,8 +902,9 @@ class ChangeWindow:
 
 
 class DeleteWindow:
-    def __init__(self, root_window):
+    def __init__(self, root_window, content_frame):
         self.mainroot = root_window
+        self.content_frame = content_frame
 
         self.delete_window = Toplevel(self.mainroot)
         self.delete_window.title("Delete Window")
@@ -922,7 +957,7 @@ class DeleteWindow:
             # Remove the selected item from the listbox
             self.listbox.delete(self.listbox.curselection())
 
-            app.display_existing_buttons()
+            app.display_existing_buttons(self.content_frame)
 
 
 # Opens a Window that allows the creation of Category Buttons
@@ -1067,7 +1102,7 @@ class CreatedWindow:
             )
             con.commit()
 
-            app.display_existing_buttons()
+            app.display_existing_buttons(self.content_frame)
 
 
         elif Category_type == "singel":
@@ -1090,7 +1125,7 @@ class CreatedWindow:
             )
             con.commit()
 
-            app.display_existing_buttons()
+            app.display_existing_buttons(self.content_frame)
 
 
         else:
@@ -1204,7 +1239,7 @@ class LoginFrame:
         created_window = CreatedWindow(self.mainroot, self.content_frame)
 
     def open_delete_window(self):
-        delete_window = DeleteWindow(self.mainroot)
+        delete_window = DeleteWindow(self.mainroot, self.content_frame)
 
     def open_change_window(self):
         change_window = ChangeWindow(self.mainroot)
@@ -1231,6 +1266,16 @@ class MainWindow:
         self.mainroot.geometry("2560x1600")
         self.mainroot.state("zoomed")
 
+        self.pages = []
+        self.current_page = 0
+        self.buttons_per_page = 6
+
+        cwd = os.getcwd()
+        files=os.listdir(cwd)
+
+        print("Current Working Directory:", os.getcwd())
+        print(files)
+
         folder_name = "Images"
         image_file_name = "BOC_Leasing.png"
 
@@ -1238,13 +1283,21 @@ class MainWindow:
         self.created_buttons_info = {}
         self.created_subcategory_ingo = {}
 
-        script_dir = os.path.dirname(__file__)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
 
         image_path = os.path.join(script_dir, folder_name, image_file_name)
 
-        img = Image.open(image_path)
-        photo_resized = img.resize((160, 160), PIL.Image.LANCZOS)
-        self.BOC_Main_icon = ImageTk.PhotoImage(photo_resized)
+        print(image_path)
+
+        try:
+            img = Image.open(image_path)
+            photo_resized = img.resize((160, 160), Image.LANCZOS)
+            self.BOC_Main_icon = ImageTk.PhotoImage(photo_resized)
+        except FileNotFoundError as e:
+            print(f"Error opening image: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
 
         self.main_frame = Frame(self.mainroot)
         self.main_frame.pack()
@@ -1265,78 +1318,92 @@ class MainWindow:
         self.content_frame = Frame(root_window)
         self.content_frame.pack(fill=BOTH, expand=True)
 
-        self.display_existing_buttons()
+        self.display_existing_buttons(self.content_frame)
 
         top_left = LoginFrame(root_window, self.content_frame)
         top_left.login_frame.place(x=1, height=200, width=620)
 
-    def display_existing_buttons(self):
-        for widget in self.content_frame.winfo_children():
+    def display_existing_buttons(self, content_frame):
+
+        self.page = Frame(content_frame)
+        self.pages.append(self.page)
+        print(self.page)
+        for widget in self.page.winfo_children():
             widget.destroy()
 
         cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category")
         existing_buttons = cur.fetchall()
 
-        num_row = 3
-        num_column = 4
+        button_start = self.current_page * self.buttons_per_page
+        button_end = min((self.current_page + 1) * self.buttons_per_page, len(existing_buttons))
 
-        r = 0
-        c = 0
+        # Iterate over the button_data for the current page
+        for i, (label, image_path, button_type) in enumerate(existing_buttons[button_start:button_end]):
 
-        for button_data in existing_buttons:
-            button_name, image_filename, category_type = button_data
-
-            if category_type == "multi":
-                img = Image.open(image_filename)
+            if button_type == "multi":
+                img = Image.open(image_path)
                 photo_resized = img.resize((80, 80), PIL.Image.LANCZOS)
                 photo_resized = ImageTk.PhotoImage(photo_resized)
-                button = Button(self.content_frame,
-                                text=button_name,
+                button = Button(self.page,
+                                text=label,
                                 font=("Myriad Pro", 25),
                                 image=photo_resized,
                                 compound="left",
-                                command=lambda category_name=button_name, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_category(category_name, category_image, old_frame, old_content_frame)
-                                )
-                button.grid(row=r, column=c, padx=50, pady=50)
+                                command=lambda category_name=label, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_category(category_name, category_image, old_frame, old_content_frame))
+                button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+                button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
-                # Store information about the created button
-                self.created_buttons_info[button_name] = {
-                    'image': photo_resized,
-                    'button': button,
-                    'type' : category_type
-                }
-
-                # Increment row and column counters
-                c += 1
-                if c >= num_column:
-                    c = 0
-                    r += 1
-
-            if category_type == "singel":
-                img = Image.open(image_filename)
+            if button_type == "singel":
+                img = Image.open(image_path)
                 photo_resized = img.resize((80, 80), PIL.Image.LANCZOS)
                 photo_resized = ImageTk.PhotoImage(photo_resized)
-                button = Button(self.content_frame,
-                                text=button_name,
+                button = Button(self.page,
+                                text=label,
                                 font=("Myriad Pro", 25),
                                 image=photo_resized,
                                 compound="left",
-                                command=lambda category_name=button_name, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame)
-                                )
-                button.grid(row=r, column=c, padx=50, pady=50)
+                                command=lambda category_name=label, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame))
+                button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+                button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
-                # Store information about the created button
-                self.created_buttons_info[button_name] = {
-                    'image': photo_resized,
-                    'button': button,
-                    'type': category_type
-                }
+        total_buttons = len(existing_buttons)
+        remaining_buttons = total_buttons - button_end
 
-                # Increment row and column counters
-                c += 1
-                if c >= num_column:
-                    c = 0
-                    r += 1
+        if self.current_page > 0:
+            prev_button = Button(self.page, text="Previous Page", command=lambda: self.prev_page(content_frame))
+            prev_button.grid(row=self.buttons_per_page // 3, column=0, pady=5)
+
+        if remaining_buttons > 0:
+            next_button = Button(self.page, text="Next Page", command=lambda: self.next_page(content_frame))
+            next_button.grid(row=self.buttons_per_page // 3, column=2, pady=5)
+
+        self.show_page()
+
+
+    def prev_page(self, content_frame):
+        self.current_page -= 1
+        self.display_existing_buttons(content_frame)
+
+    def next_page(self, content_frame):
+        self.current_page += 1
+        self.display_existing_buttons(content_frame)
+
+    def show_page(self):
+        if 0 <= self.current_page < len(self.pages):
+            for page in self.pages:
+                page.pack_forget()
+
+            self.pages[self.current_page].pack(side="top", fill="both", expand=True)
+        else:
+            print("Invalid page index")
+
+    def get_total_buttons(self):
+        conn = sqlite3.connect("button_data.db")
+        cur = conn.cursor()
+        cur.execute('SELECT COUNT(*) FROM buttons')
+        total_buttons = cur.fetchone()[0]
+        conn.close()
+        return total_buttons
 
     def open_category(self, category_name, category_image, old_frame, old_content_frame):
         self.main_frame.pack_forget()
@@ -1356,6 +1423,10 @@ class sub_categorys:
         self.mainroot = root_window
         self.category_frame = Frame(self.mainroot)
         self.category_frame.pack()
+
+        self.pages = []
+        self.current_page = 0
+        self.buttons_per_page = 6
 
 
         self.created_sub_category = {}
@@ -1379,7 +1450,7 @@ class sub_categorys:
         self.sub_content_frame = Frame(self.mainroot)
         self.sub_content_frame.pack(fill=BOTH, expand=True)
 
-        self.display_existing_subcategory(category_name)
+        self.display_existing_subcategory(category_name, self.sub_content_frame)
 
     def open_infomation(self, category_name, category_image, old_frame, old_content_frame):
         self.category_frame.pack_forget()
@@ -1394,8 +1465,11 @@ class sub_categorys:
         old_frame.pack()
         old_content_frame.pack()
 
-    def display_existing_subcategory(self, category_name):
-        for widget in self.sub_content_frame.winfo_children():
+    def display_existing_subcategory(self,category_name, sub_content):
+        self.page = Frame(sub_content)
+        self.pages.append(self.page)
+        print(self.page)
+        for widget in self.page.winfo_children():
             widget.destroy()
 
         Header_Info_name_to_check = category_name
@@ -1426,42 +1500,66 @@ class sub_categorys:
 
         extracted_values = [(entry[1], entry[2], entry[3]) for entry in result_message]
 
-        num_row = 3
-        num_column = 5
+        button_start = self.current_page * self.buttons_per_page
+        button_end = min((self.current_page + 1) * self.buttons_per_page, len(extracted_values))
 
-        r = 0
-        c = 0
-
-        for button_data in extracted_values:
-            Header_Info_name, Sub_Category_name, image_filename = button_data
-
-
-            img = Image.open(image_filename)
+        # Iterate over the button_data for the current page
+        for i, (Header_info_name, Sub_category_name, image_file_name) in enumerate(extracted_values[button_start:button_end]):
+            img = Image.open(image_file_name)
             photo_resized = img.resize((80, 80), PIL.Image.LANCZOS)
             photo_resized = ImageTk.PhotoImage(photo_resized)
-            #print(photo_resized)
-            button = Button(self.sub_content_frame,
-                            text=Sub_Category_name,
+            button = Button(self.page,
+                            text=Sub_category_name,
                             font=("Myriad Pro", 25),
                             image=photo_resized,
                             compound="left",
-                            command=lambda category_name=Sub_Category_name, category_image=photo_resized, old_frame=self.category_frame, old_content_frame=self.sub_content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame)
-
+                            command=lambda category_name=Sub_category_name, category_image=photo_resized,
+                                           old_frame=self.category_frame,
+                                           old_content_frame=self.sub_content_frame: self.open_infomation(category_name,
+                                                                                                          category_image,
+                                                                                                          old_frame,
+                                                                                                          old_content_frame)
                             )
-            button.grid(row=r, column=c, padx=50, pady=50)
+            button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+            button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
-            # Store information about the created button
-            self.created_sub_category[Sub_Category_name] = {
-                'Header_Category': Header_Info_name,
-                'Sub_Category': Sub_Category_name,
-                'Image_filename' : photo_resized
-            }
+        total_buttons = len(extracted_values)
+        remaining_buttons = total_buttons - button_end
 
-            # Increment row and column counters
-            c += 1
-            if c >= num_column:
-                c = 0
-                r += 1
+        if self.current_page > 0:
+            prev_button = Button(self.page, text="Previous Page", command=lambda: self.prev_page(category_name, self.sub_content_frame))
+            prev_button.grid(row=self.buttons_per_page // 3, column=0, pady=5)
+
+        if remaining_buttons > 0:
+            next_button = Button(self.page, text="Next Page", command=lambda: self.next_page(category_name, sub_content))
+            next_button.grid(row=self.buttons_per_page // 3, column=2, pady=5)
+
+        self.show_page()
+
+    def prev_page(self, category_name, content_frame):
+        self.current_page -= 1
+        self.display_existing_subcategory(category_name, content_frame)
+
+    def next_page(self,category_name, content_frame):
+        self.current_page += 1
+        self.display_existing_subcategory(category_name, content_frame)
+
+    def show_page(self):
+        if 0 <= self.current_page < len(self.pages):
+            for page in self.pages:
+                page.pack_forget()
+
+            self.pages[self.current_page].pack(side="top", fill="both", expand=True)
+        else:
+            print("Invalid page index")
+
+    def get_total_buttons(self):
+        conn = sqlite3.connect("button_data.db")
+        cur = conn.cursor()
+        cur.execute('SELECT COUNT(*) FROM buttons')
+        total_buttons = cur.fetchone()[0]
+        conn.close()
+        return total_buttons
 
 
 class display_infomation:
@@ -1470,6 +1568,10 @@ class display_infomation:
         self.mainroot = root_window
         self.category_frame = Frame(self.mainroot)
         self.category_frame.pack()
+
+        self.pages = []
+        self.current_page = 0
+        self.buttons_per_page = 6
 
         self.sub_content_frame = Frame(self.mainroot)
         self.sub_content_frame.pack(fill=BOTH, expand=True)
@@ -1494,7 +1596,7 @@ class display_infomation:
 
 
 
-        self.display_existing_Infoamtion(category_name)
+        self.display_existing_Infoamtion(category_name, self.sub_content_frame)
 
     def go_back_to_previous(self, current_frame, current_content_frame, old_frame, old_content_frame):
         current_frame.pack_forget()
@@ -1503,8 +1605,11 @@ class display_infomation:
         old_frame.pack()
         old_content_frame.pack()
 
-    def display_existing_Infoamtion(self, category_name):
-        for widget in self.sub_content_frame.winfo_children():
+    def display_existing_Infoamtion(self, category_name, Info_content_frame):
+        self.page = Frame(Info_content_frame)
+        self.pages.append(self.page)
+        print(self.page)
+        for widget in self.page.winfo_children():
             widget.destroy()
 
         Header_Info_name_to_check = category_name
@@ -1515,34 +1620,58 @@ class display_infomation:
 
         print(extracted_values)
 
-        num_row = 3
-        num_column = 5
+        button_start = self.current_page * self.buttons_per_page
+        button_end = min((self.current_page + 1) * self.buttons_per_page, len(extracted_values))
 
-        r = 0
-        c = 0
-
-        for button_data in extracted_values:
-            Header_Info_name, Info_name= button_data
-
-            button = Button(self.sub_content_frame,
+        # Iterate over the button_data for the current page
+        for i, (Header_info_name, Info_name) in enumerate(extracted_values[button_start:button_end]):
+            button = Button(self.page,
                             text=Info_name,
                             font=("Myriad Pro", 25),
-                            compound="left",
-                            command=lambda header_info=Header_Info_name, info=Info_name, category_frame=self.category_frame, sub_content_frame=self.sub_content_frame: self.open_Infomation_text(header_info, info, category_frame, sub_content_frame)
+                            command=lambda header_info=Header_info_name, info=Info_name, category_frame=self.category_frame, sub_content_frame=self.sub_content_frame: self.open_Infomation_text(header_info, info, category_frame, sub_content_frame)
                             )
-            button.grid(row=r, column=c, padx=50, pady=50)
+            button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
 
-            # Store information about the created button
-            self.created_Info_category[Info_name] = {
-                'Header_Category': Header_Info_name,
-                'Info_Category': Info_name,
-            }
 
-            # Increment row and column counters
-            c += 1
-            if c >= num_column:
-                c = 0
-                r += 1
+        total_buttons = len(extracted_values)
+        remaining_buttons = total_buttons - button_end
+
+        if self.current_page > 0:
+            prev_button = Button(self.page, text="Previous Page",
+                                 command=lambda: self.prev_page(category_name, self.sub_content_frame))
+            prev_button.grid(row=self.buttons_per_page // 3, column=0, pady=5)
+
+        if remaining_buttons > 0:
+            next_button = Button(self.page, text="Next Page",
+                                 command=lambda: self.next_page(category_name, Info_content_frame))
+            next_button.grid(row=self.buttons_per_page // 3, column=2, pady=5)
+
+        self.show_page()
+
+    def prev_page(self, category_name, content_frame):
+        self.current_page -= 1
+        self.display_existing_Infoamtion(category_name, content_frame)
+
+    def next_page(self, category_name, content_frame):
+        self.current_page += 1
+        self.display_existing_Infoamtion(category_name, content_frame)
+
+    def show_page(self):
+        if 0 <= self.current_page < len(self.pages):
+            for page in self.pages:
+                page.pack_forget()
+
+            self.pages[self.current_page].pack(side="top", fill="both", expand=True)
+        else:
+            print("Invalid page index")
+
+    def get_total_buttons(self):
+        conn = sqlite3.connect("button_data.db")
+        cur = conn.cursor()
+        cur.execute('SELECT COUNT(*) FROM buttons')
+        total_buttons = cur.fetchone()[0]
+        conn.close()
+        return total_buttons
 
     def Back_to_Infomation_name(self, current_frame, current_content_frame, new_frame, new_content_frame):
         current_frame.pack_forget()
@@ -1623,6 +1752,8 @@ class display_infomation:
 
 
 
+
+
     def show_full_version(self, Full_text):
 
         self.Info_sum_text.grid_forget()
@@ -1677,6 +1808,7 @@ class display_infomation:
 
 
 if __name__ == "__main__":
+    main()
     root_window = Tk()
     app = MainWindow(root_window)
     root_window.mainloop()
