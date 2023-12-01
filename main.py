@@ -1796,17 +1796,6 @@ class display_infomation:
         self.Info_sum_scrollbar.grid(row=0, column=1, sticky="ns")
 
 
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     main()
     root_window = Tk()
