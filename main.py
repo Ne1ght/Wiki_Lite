@@ -7,6 +7,9 @@ from tkinter import filedialog
 from tkinter import messagebox
 import PIL.Image
 from PIL import Image, ImageTk
+import zipfile
+import webbrowser
+import requests
 import sqlite3
 
 
@@ -39,6 +42,49 @@ def main():
 
     if not check_previous_setup():
         setup_environment(venv_path)
+
+def is_update_needed(current_version):
+    # Replace 'username' and 'repo' with your GitHub username and repository name
+    latest_release_url = 'https://github.com/Ne1ght/Wiki_Lite/releases/latest'
+
+    response = requests.get(latest_release_url)
+    latest_version = response.url.split("/")[-1]
+
+    return latest_version > current_version
+
+
+def check_for_updates(root_window):
+    # Replace 'current_version' with your current version number
+    current_version = 'your_current_version'
+
+    if is_update_needed(current_version):
+        response = messagebox.askyesno("Update Available",
+                                       "A new update is available. Do you want to download and install it?")
+        if response == YES:
+            download_and_install_update(root_window)
+
+
+def download_and_install_update(root_window):
+    # Replace 'username' and 'repo' with your GitHub username and repository name
+    download_url = 'https://github.com/Ne1ght/Wiki_Lite/archive/main.zip'
+
+    response = requests.get(download_url)
+
+    with open('latest_release.zip', 'wb') as file:
+        file.write(response.content)
+
+    with zipfile.ZipFile('latest_release.zip', 'r') as zip_ref:
+        zip_ref.extractall('.')
+
+    os.remove('latest_release.zip')
+
+    messagebox.showinfo("Update Installed", "The update has been installed. Please restart the program.")
+    restart_program(root_window)
+
+
+def restart_program(root):
+    root.destroy()
+    # Re-run your main script to restart the program
 
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
@@ -1799,5 +1845,6 @@ class display_infomation:
 if __name__ == "__main__":
     main()
     root_window = Tk()
+    check_for_updates(root_window)
     app = MainWindow(root_window)
     root_window.mainloop()
