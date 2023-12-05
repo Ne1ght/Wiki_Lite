@@ -7,9 +7,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 import PIL.Image
 from PIL import Image, ImageTk
-import zipfile
-import webbrowser
-import requests
 import sqlite3
 
 
@@ -42,49 +39,6 @@ def main():
 
     if not check_previous_setup():
         setup_environment(venv_path)
-
-def is_update_needed(current_version):
-    # Replace 'username' and 'repo' with your GitHub username and repository name
-    latest_release_url = 'https://github.com/Ne1ght/Wiki_Lite/releases/latest'
-
-    response = requests.get(latest_release_url)
-    latest_version = response.url.split("/")[-1]
-
-    return latest_version > current_version
-
-
-def check_for_updates(root_window):
-    # Replace 'current_version' with your current version number
-    current_version = 'your_current_version'
-
-    if is_update_needed(current_version):
-        response = messagebox.askyesno("Update Available",
-                                       "A new update is available. Do you want to download and install it?")
-        if response == YES:
-            download_and_install_update(root_window)
-
-
-def download_and_install_update(root_window):
-    # Replace 'username' and 'repo' with your GitHub username and repository name
-    download_url = 'https://github.com/Ne1ght/Wiki_Lite/archive/main.zip'
-
-    response = requests.get(download_url)
-
-    with open('latest_release.zip', 'wb') as file:
-        file.write(response.content)
-
-    with zipfile.ZipFile('latest_release.zip', 'r') as zip_ref:
-        zip_ref.extractall('.')
-
-    os.remove('latest_release.zip')
-
-    messagebox.showinfo("Update Installed", "The update has been installed. Please restart the program.")
-    restart_program(root_window)
-
-
-def restart_program(root):
-    root.destroy()
-    # Re-run your main script to restart the program
 
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
@@ -331,6 +285,8 @@ class AddWindow:
 
     def clear_error(self):
         self.error_label.config(text="")  # Clear the error message
+
+    # needs to add a intermediate step to the crateion to prevent the Null Value to be added
 
     def add_sub_category(self):
         Info_Header_Name = self.Info_Header_Name
@@ -744,7 +700,6 @@ class ChangeWindow:
 
     def update_databse(self, file_source, selected_button):
         self.file_source = file_source
-        print(selected_button)
 
 
         # Process the values based on the number of arguments
@@ -759,13 +714,18 @@ class ChangeWindow:
 
 
             new_Image_path = None
-            new_Image_path = self.selected_file.name
+            print(new_Image_path)
 
+            selected_file_path = "C:/Users/Maxim/PycharmProjects/RE BOC Leitfaden/Images/No Image.jpg"
+
+            if self.selected_file is not None:
+                selected_file_path = self.selected_file.name
 
             if not new_Image_path:
                 cur.execute("SELECT image_filename FROM Head_category WHERE Head_category_name=?",
                             (selected_button,))
-                new_Image_path = cur.fetchone()
+                result = cur.fetchone()
+                new_Image_path = result[0] if result else None
 
 
             new_category_type = None
@@ -845,7 +805,6 @@ class ChangeWindow:
 
     def open_change_view(self):
         selected_button = self.Info_Header_Name
-        print(selected_button)
 
         if self.selected_category_source == "Head":
             cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category WHERE Head_category_name=?",
@@ -1850,7 +1809,13 @@ class display_infomation:
 
 if __name__ == "__main__":
     main()
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running as a PyInstaller bundle
+        subprocess.Popen(['python.exe', 'main.py'], creationflags=subprocess.CREATE_NO_WINDOW)
+    else:
+        # Running in a normal Python environment
+        subprocess.Popen(['python.exe', 'main.py'], creationflags=subprocess.CREATE_NO_WINDOW)
+
     root_window = Tk()
-    check_for_updates(root_window)
     app = MainWindow(root_window)
     root_window.mainloop()
