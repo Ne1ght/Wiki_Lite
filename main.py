@@ -1314,7 +1314,7 @@ class MainWindow:
 
         self.pages = []
         self.current_page = 0
-        self.buttons_per_page = 6
+        self.buttons_per_page = 12
 
         cwd = os.getcwd()
         files=os.listdir(cwd)
@@ -1409,7 +1409,7 @@ class MainWindow:
                                 image=photo_resized,
                                 compound="left",
                                 command=lambda category_name=label, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame))
-                button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+                button.grid(row=i // 4, column=i % 4, padx=50, pady=50)
                 button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
         total_buttons = len(existing_buttons)
@@ -1472,7 +1472,7 @@ class sub_categorys:
 
         self.pages = []
         self.current_page = 0
-        self.buttons_per_page = 6
+        self.buttons_per_page = 12
 
 
         self.created_sub_category = {}
@@ -1566,18 +1566,24 @@ class sub_categorys:
                                                                                                           old_frame,
                                                                                                           old_content_frame)
                             )
-            button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+            button.grid(row=i // 4, column=i % 4, padx=50, pady=50)
             button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
         total_buttons = len(extracted_values)
         remaining_buttons = total_buttons - button_end
 
         if self.current_page > 0:
-            prev_button = Button(self.page, text="Previous Page", command=lambda: self.prev_page(category_name, self.sub_content_frame))
+            prev_button = Button(self.page,
+                                 text="Previous Page",
+                                 font=("Myriad Pro", 25),
+                                 command=lambda: self.prev_page(category_name, self.sub_content_frame))
             prev_button.grid(row=self.buttons_per_page // 3, column=0, pady=5)
 
         if remaining_buttons > 0:
-            next_button = Button(self.page, text="Next Page", command=lambda: self.next_page(category_name, sub_content))
+            next_button = Button(self.page,
+                                 text="Next Page",
+                                 font=("Myriad Pro", 25),
+                                 command=lambda: self.next_page(category_name, sub_content))
             next_button.grid(row=self.buttons_per_page // 3, column=2, pady=5)
 
         self.show_page()
@@ -1617,7 +1623,7 @@ class display_infomation:
 
         self.pages = []
         self.current_page = 0
-        self.buttons_per_page = 6
+        self.buttons_per_page = 12
 
         self.sub_content_frame = Frame(self.mainroot)
         self.sub_content_frame.pack(fill=BOTH, expand=True)
@@ -1676,7 +1682,7 @@ class display_infomation:
                             font=("Myriad Pro", 25),
                             command=lambda header_info=Header_info_name, info=Info_name, category_frame=self.category_frame, sub_content_frame=self.sub_content_frame: self.open_Infomation_text(header_info, info, category_frame, sub_content_frame)
                             )
-            button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+            button.grid(row=i // 4, column=i % 4, padx=50, pady=50)
 
 
         total_buttons = len(extracted_values)
