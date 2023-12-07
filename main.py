@@ -424,6 +424,8 @@ class AddWindow:
             )
             con.commit()
 
+
+
     def add_infomation(self):
         self.add_window.geometry("1600x800")
         Info_Header_Name = self.Info_Header_Name
@@ -516,6 +518,8 @@ class AddWindow:
                 (Info_Header_Name, Info_name, Info_Sum_Text, Info_Full_Text)
             )
             con.commit()
+
+            messagebox.showinfo("Erstellung", f"{Info_name} wurde erstellt. ")
 
 
 
@@ -1129,8 +1133,6 @@ class CreatedWindow:
 
         # if multi
         elif Category_type == "multi":
-            with open(f"{Category_name}.py", "w") as file:
-                file.write(Category_name)
             button_name = Button(self.content_frame,
                                 text=Category_name,
                                 font=("Myriad Pro", 20),
@@ -1148,12 +1150,12 @@ class CreatedWindow:
             )
             con.commit()
 
+            messagebox.showinfo("Success", f"{Category_name} was created. ")
+
             app.display_existing_buttons(self.content_frame)
 
 
         elif Category_type == "singel":
-            with open(f"{Category_name}.py", "w") as file:
-                file.write(Category_name)
             button_name = Button(self.content_frame,
                                  text=Category_name,
                                  font=("Myriad Pro", 20),
@@ -1170,6 +1172,8 @@ class CreatedWindow:
                 (Category_name, selected_file_path, Category_type)
             )
             con.commit()
+
+            messagebox.showinfo("Success", f"{Category_name} was created. ")
 
             app.display_existing_buttons(self.content_frame)
 
@@ -1314,7 +1318,7 @@ class MainWindow:
 
         self.pages = []
         self.current_page = 0
-        self.buttons_per_page = 6
+        self.buttons_per_page = 12
 
         cwd = os.getcwd()
         files=os.listdir(cwd)
@@ -1396,7 +1400,7 @@ class MainWindow:
                                 image=photo_resized,
                                 compound="left",
                                 command=lambda category_name=label, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_category(category_name, category_image, old_frame, old_content_frame))
-                button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+                button.grid(row=i // 4, column=i % 4, padx=50, pady=50)
                 button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
             if button_type == "singel":
@@ -1409,7 +1413,7 @@ class MainWindow:
                                 image=photo_resized,
                                 compound="left",
                                 command=lambda category_name=label, category_image=photo_resized, old_frame=self.main_frame, old_content_frame=self.content_frame: self.open_infomation(category_name, category_image, old_frame, old_content_frame))
-                button.grid(row=i // 3, column=i % 3, padx=50, pady=50)
+                button.grid(row=i // 4, column=i % 4, padx=50, pady=50)
                 button.photo = photo_resized  # Keep a reference to the image to prevent garbage collection
 
         total_buttons = len(existing_buttons)
