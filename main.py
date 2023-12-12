@@ -1,4 +1,7 @@
 import  os
+import shutil
+import time
+import schedule
 import sys
 import subprocess
 from pathlib import Path
@@ -7,9 +10,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 import PIL.Image
 from PIL import Image, ImageTk
-import zipfile
-import webbrowser
-import requests
 import sqlite3
 
 
@@ -42,49 +42,6 @@ def main():
 
     if not check_previous_setup():
         setup_environment(venv_path)
-
-def is_update_needed(current_version):
-    # Replace 'username' and 'repo' with your GitHub username and repository name
-    latest_release_url = 'https://github.com/Ne1ght/Wiki_Lite/releases/latest'
-
-    response = requests.get(latest_release_url)
-    latest_version = response.url.split("/")[-1]
-
-    return latest_version > current_version
-
-
-def check_for_updates(root_window):
-    # Replace 'current_version' with your current version number
-    current_version = 'your_current_version'
-
-    if is_update_needed(current_version):
-        response = messagebox.askyesno("Update Available",
-                                       "A new update is available. Do you want to download and install it?")
-        if response == YES:
-            download_and_install_update(root_window)
-
-
-def download_and_install_update(root_window):
-    # Replace 'username' and 'repo' with your GitHub username and repository name
-    download_url = 'https://github.com/Ne1ght/Wiki_Lite/archive/main.zip'
-
-    response = requests.get(download_url)
-
-    with open('latest_release.zip', 'wb') as file:
-        file.write(response.content)
-
-    with zipfile.ZipFile('latest_release.zip', 'r') as zip_ref:
-        zip_ref.extractall('.')
-
-    os.remove('latest_release.zip')
-
-    messagebox.showinfo("Update Installed", "The update has been installed. Please restart the program.")
-    restart_program(root_window)
-
-
-def restart_program(root):
-    root.destroy()
-    # Re-run your main script to restart the program
 
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
@@ -119,6 +76,15 @@ cur.execute("""
     )
 """)
 con.commit()
+
+def backup_database(source_path, backup_folder):
+    timestamp = time.strftime("%Y%m%d%H%M%S")
+    backup_filename = f"backup_{timestamp}.db"
+
+    source_file = os.path.join(source_path, "database.db")
+    backup_file = os.path.join(backup_folder, backup_filename)
+
+    shutil.copyfile(source_file, backup_file)
 
 
 class AddWindow:
@@ -424,6 +390,10 @@ class AddWindow:
             )
             con.commit()
 
+            messagebox.showinfo("Success", f"{Sub_Category_name} was added")
+
+
+
 
 
     def add_infomation(self):
@@ -519,7 +489,7 @@ class AddWindow:
             )
             con.commit()
 
-            messagebox.showinfo("Erstellung", f"{Info_name} wurde erstellt. ")
+            messagebox.showinfo("Success", f"{Info_name} was added. ")
 
 
 
@@ -956,6 +926,10 @@ class DeleteWindow:
         self.mainroot = root_window
         self.content_frame = content_frame
 
+        self.Info_Header_Name = None
+
+        self.selected_category_source = None
+
         self.delete_window = Toplevel(self.mainroot)
         self.delete_window.title("Delete Window")
         self.delete_window.geometry("800x400")
@@ -970,10 +944,51 @@ class DeleteWindow:
                                   )
         self.delete_label.grid(row=0, column=1)
 
+        cur.execute("SELECT Head_category_name from Head_category")
+        self.Head_table_categorys = cur.fetchall()
+        print(self.Head_table_categorys)
+
+        cur.execute("SELECT Header_Info_name, Sub_Category_name FROM sub_category")
+        self.Sub_table_categorys = cur.fetchall()
+        print(self.Sub_table_categorys)
+
+        cur.execute("SELECT Header_Info_name, Info_name FROM category_infomation")
+        self.info_table_categorys = cur.fetchall()
+        print(self.info_table_categorys)
+
+        self.Main_listbox = Listbox(self.delete_frame,
+                                    selectmode=SINGLE,
+                                    font=("Myriad Pro", 15)
+                                    )
+        self.Main_listbox.grid(row=1, column=0)
+
+        for entry in self.Head_table_categorys:
+            self.Main_listbox.insert(END, entry[0])  # Extracting the value from the single-element tuple
+
+        self.Main_listbox.bind('<<ListboxSelect>>', self.on_select_headlist)
+
+        self.Sub_listbox = Listbox(self.delete_frame,
+                                   selectmode=SINGLE,
+                                   font=("Myriad Pro", 15)
+                                   )
+        self.Sub_listbox.grid(row=1, column=1)
+
+        self.Sub_listbox.bind('<<ListboxSelect>>', self.on_select_sublist)
+
+        self.infomation_listbox = Listbox(self.delete_frame,
+                                          selectmode=SINGLE,
+                                          font=("Myriad Pro", 15)
+                                          )
+        self.infomation_listbox.grid(row=1, column=2)
+
+        self.infomation_listbox.bind('<<ListboxSelect>>', self.on_select_infoamtionlist)
+
+        """
         self.listbox = Listbox(self.delete_frame,
                                selectmode=SINGLE
                                )
         self.listbox.grid(row=1, column=1)
+        """
 
         self.delete_button = Button(self.delete_frame,
                                     text="Delete",
@@ -982,32 +997,98 @@ class DeleteWindow:
                                     )
         self.delete_button.grid(row=3, column=1)
 
-        self.populate_listbox()
+        # self.populate_listbox()
 
+    def on_select_headlist(self, event):
+        if self.Main_listbox.curselection():
+            selected_index = self.Main_listbox.curselection()[0]
+            selected = self.Main_listbox.get(selected_index)
+            self.filter_list2(selected)
+            self.filter_list3(selected)
+
+            self.Info_Header_Name = selected
+
+            self.selected_category_source = "Head"
+
+    def on_select_sublist(self, event):
+        if self.Sub_listbox.curselection():
+            selected_index = self.Sub_listbox.curselection()[0]
+            selected = self.Sub_listbox.get(selected_index)
+            self.filter_list3(selected)
+
+            self.Info_Header_Name = selected
+
+            self.selected_category_source = "Sub"
+
+    def on_select_infoamtionlist(self, event):
+        if self.infomation_listbox.curselection():
+            selected_index = self.infomation_listbox.curselection()[0]
+            selected = self.infomation_listbox.get(selected_index)
+
+            self.Info_Header_Name = selected
+
+            self.selected_category_source = "Info"
+
+    def filter_list2(self, selected):
+        self.Sub_listbox.delete(0, END)
+        filtered_entries = [entry[1] for entry in self.Sub_table_categorys if entry[0] == selected]
+        for entry in filtered_entries:
+            self.Sub_listbox.insert(END, entry)
+
+            self.Info_Header_Name = selected
+
+    def filter_list3(self, selected):
+        self.infomation_listbox.delete(0, END)
+        filtered_entries = [entry[1] for entry in self.info_table_categorys if entry[0] == selected]
+        for entry in filtered_entries:
+            self.infomation_listbox.insert(END, entry)
+
+            self.Info_Header_Name = selected
+
+    """
     def populate_listbox(self):
         cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category")
         existing_buttons = cur.fetchall()
         for button_data in existing_buttons:
             button_name, _, _ = button_data  # Extract the button name
             self.listbox.insert(END, button_name)
+    """
 
     def delete_head_category(self):
-        selected_button = self.listbox.get(self.listbox.curselection())
+        selected_button = self.Info_Header_Name
+
+        button_source = self.selected_category_source
+
+        print(selected_button)
         result = messagebox.askokcancel("Confirm Deletion", f"Delete button: {selected_button}")
         if result:
-            # Delete the database entry
-            cur.execute("DELETE FROM Head_category WHERE Head_category_name=?", (selected_button,))
-            con.commit()
+            if button_source == "Head":
+                cur.execute("DELETE FROM Head_category WHERE Head_category_name=?", (selected_button,))
+                con.commit()
 
-            # Delete the corresponding module (.py file)
-            module_name = selected_button + ".py"
-            if os.path.exists(module_name):
-                os.remove(module_name)
+                selected_index = self.Main_listbox.curselection()[0]
+                self.Main_listbox.delete(selected_index)
 
-            # Remove the selected item from the listbox
-            self.listbox.delete(self.listbox.curselection())
+                app.display_existing_buttons(self.content_frame)
 
-            app.display_existing_buttons(self.content_frame)
+            elif button_source == "Sub":
+                cur.execute("DELETE FROM sub_category WHERE Sub_Category_name=?", (selected_button,))
+                con.commit()
+
+                selected_index = self.Sub_listbox.curselection()[0]
+                self.Sub_listbox.delete(selected_index)
+
+                app.display_existing_buttons(self.content_frame)
+
+            elif button_source == "Info":
+                cur.execute("DELETE FROM category_Infomation WHERE Info_name=?", (selected_button,))
+                con.commit()
+
+                selected_index = self.infomation_listbox.curselection()[0]
+                self.infomation_listbox.delete(selected_index)
+
+                app.display_existing_buttons(self.content_frame)
+
 
 
 # Opens a Window that allows the creation of Category Buttons
@@ -1374,12 +1455,14 @@ class MainWindow:
         top_left.login_frame.place(x=1, height=200, width=620)
 
     def display_existing_buttons(self, content_frame):
-
-        self.page = Frame(content_frame)
-        self.pages.append(self.page)
-        print(self.page)
-        for widget in self.page.winfo_children():
-            widget.destroy()
+        if not hasattr(self, 'page') or not self.page.winfo_exists():
+            # Create a new frame if it doesn't exist
+            self.page = Frame(content_frame)
+            self.pages.append(self.page)
+        else:
+            # Clear existing widgets in the frame
+            for widget in self.page.winfo_children():
+                widget.destroy()
 
         cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category")
         existing_buttons = cur.fetchall()
@@ -1516,11 +1599,14 @@ class sub_categorys:
         old_content_frame.pack()
 
     def display_existing_subcategory(self,category_name, sub_content):
-        self.page = Frame(sub_content)
-        self.pages.append(self.page)
-        print(self.page)
-        for widget in self.page.winfo_children():
-            widget.destroy()
+        if not hasattr(self, 'page') or not self.page.winfo_exists():
+            # Create a new frame if it doesn't exist
+            self.page = Frame(sub_content)
+            self.pages.append(self.page)
+        else:
+            # Clear existing widgets in the frame
+            for widget in self.page.winfo_children():
+                widget.destroy()
 
         Header_Info_name_to_check = category_name
 
@@ -1656,11 +1742,14 @@ class display_infomation:
         old_content_frame.pack()
 
     def display_existing_Infoamtion(self, category_name, Info_content_frame):
-        self.page = Frame(Info_content_frame)
-        self.pages.append(self.page)
-        print(self.page)
-        for widget in self.page.winfo_children():
-            widget.destroy()
+        if not hasattr(self, 'page') or not self.page.winfo_exists():
+            # Create a new frame if it doesn't exist
+            self.page = Frame(Info_content_frame)
+            self.pages.append(self.page)
+        else:
+            # Clear existing widgets in the frame
+            for widget in self.page.winfo_children():
+                widget.destroy()
 
         Header_Info_name_to_check = category_name
 
@@ -1849,6 +1938,10 @@ class display_infomation:
 if __name__ == "__main__":
     main()
     root_window = Tk()
-    check_for_updates(root_window)
     app = MainWindow(root_window)
     root_window.mainloop()
+    schedule.every().day.at("23:22").do(backup_database, r"C:\Users\nolram moritz\PycharmProjects\RE_BOC_Leitfaden", r"C:\Users\nolram moritz\PycharmProjects\RE_BOC_Leitfaden\Backup")
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
