@@ -1,4 +1,7 @@
 import  os
+import shutil
+import time
+import schedule
 import sys
 import subprocess
 from pathlib import Path
@@ -74,6 +77,15 @@ cur.execute("""
 """)
 con.commit()
 
+def backup_database(source_path, backup_folder):
+    timestamp = time.strftime("%Y%m%d%H%M%S")
+    backup_filename = f"backup_{timestamp}.db"
+
+    source_file = os.path.join(source_path, "database.db")
+    backup_file = os.path.join(backup_folder, backup_filename)
+
+    shutil.copyfile(source_file, backup_file)
+
 
 class AddWindow:
     def __init__(self, root_window):
@@ -120,21 +132,21 @@ class AddWindow:
 
         self.Sub_listbox.bind('<<ListboxSelect>>', self.on_select_sublist)
 
-        self.add_Info_button = Button(self.add_frame,
+        self.show_add_Info_button = Button(self.add_frame,
                                  text="Add Infomation",
                                  font=("Myriad Pro", 20),
                                  relief=RAISED,
-                                 command=self.add_infomation
+                                 command=self.show_add_infomation
                                       )
-        self.add_Info_button.grid(row=2, column=1)
+        self.show_add_Info_button.grid(row=2, column=1)
 
-        self.add_sub_category_button = Button(self.add_frame,
+        self.show_add_sub_category_button = Button(self.add_frame,
                                               text="Add Sub Category",
                                               font=("Myriad Pro", 20),
                                               relief=RAISED,
-                                              command=self.add_sub_category
+                                              command=self.show_add_sub_category
                                               )
-        self.add_sub_category_button.grid(row=2, column=2)
+        self.show_add_sub_category_button.grid(row=2, column=2)
 
         self.add_sub_category_frame = Frame(self.add_window)
 
@@ -286,7 +298,7 @@ class AddWindow:
     def clear_error(self):
         self.error_label.config(text="")  # Clear the error message
 
-    def add_sub_category(self):
+    def show_add_sub_category(self):
         Info_Header_Name = self.Info_Header_Name
         print(Info_Header_Name)
         Sub_Category_name = self.entry_cate_name.get()
@@ -306,6 +318,14 @@ class AddWindow:
         self.select_file_button.grid(row=3, column=2)
 
         self.add_sub_category.grid(row=4, column=1)
+
+
+
+    def add_sub_category(self):
+        Info_Header_Name = self.Info_Header_Name
+        print(Info_Header_Name)
+        Sub_Category_name = self.entry_cate_name.get()
+        image_file_name = self.selected_file
 
         # Initialize selected_file_path to the default image path
         selected_file_path = "C:/Users/Maxim/PycharmProjects/RE BOC Leitfaden/Images/No Image.jpg"
@@ -378,16 +398,12 @@ class AddWindow:
             )
             con.commit()
 
+            messagebox.showinfo("Success", f"{Sub_Category_name} was added")
 
-
-
-
-    def add_infomation(self):
+    def show_add_infomation(self):
         self.add_window.geometry("1600x800")
         Info_Header_Name = self.Info_Header_Name
-        Info_name = self.enrty_Infomation_name.get()
-        Info_Sum_Text = self.add_Infomation_sum_Text.get("1.0", "end-1c")
-        Info_Full_Text = self.add_Infomation_full_Text.get("1.0", "end-1c")
+
         self.add_frame.pack_forget()
 
         self.add_Infomation_frame.pack()
@@ -411,9 +427,18 @@ class AddWindow:
 
         self.add_Infomation.grid(row=6, column=2)
 
-        cur.execute("SELECT * FROM category_Infomation WHERE Header_Info_name=? AND Info_name=? AND Info_Sum_text=? AND info_Full_text=?",
-                    (Info_Header_Name, Info_name, Info_Sum_Text, Info_Full_Text)
-                    )
+
+
+    def add_infomation(self):
+        Info_Header_Name = self.Info_Header_Name
+        Info_name = self.enrty_Infomation_name.get()
+        Info_Sum_Text = self.add_Infomation_sum_Text.get("1.0", "end-1c")
+        Info_Full_Text = self.add_Infomation_full_Text.get("1.0", "end-1c")
+
+        cur.execute(
+            "SELECT * FROM category_Infomation WHERE Header_Info_name=? AND Info_name=? AND Info_Sum_text=? AND info_Full_text=?",
+            (Info_Header_Name, Info_name, Info_Sum_Text, Info_Full_Text)
+            )
 
         existing_button = cur.fetchone()
 
@@ -475,7 +500,7 @@ class AddWindow:
             )
             con.commit()
 
-            messagebox.showinfo("Erstellung", f"{Info_name} wurde erstellt. ")
+            messagebox.showinfo("Success", f"{Info_name} was added. ")
 
 
 
@@ -1926,3 +1951,8 @@ if __name__ == "__main__":
     root_window = Tk()
     app = MainWindow(root_window)
     root_window.mainloop()
+    schedule.every().day.at("11:00").do(backup_database, r"C:\Users\Maxim\PycharmProjects\RE_BOC_Leitfaden", r"C:\Users\Maxim\PycharmProjects\RE_BOC_Leitfaden\Backup")
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
