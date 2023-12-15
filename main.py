@@ -43,6 +43,39 @@ def main():
     if not check_previous_setup():
         setup_environment(venv_path)
 
+def select_database():
+    root_path = os.getcwd()
+
+    database = "DataBase.db"
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    print(script_dir)
+
+    database_path = os.path.join(script_dir, database)
+
+    print(database_path)
+
+    print(database_path)
+    return database_path
+
+def select_backup_folder():
+    root_path = os.getcwd()
+
+    folder_name = "Backup"
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    print(script_dir)
+
+    backup_folder_path = os.path.join(script_dir, folder_name)
+
+    print(database_path)
+
+
+    print(backup_folder_path)
+    return backup_folder_path
+
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
 
@@ -81,8 +114,13 @@ def backup_database(source_path, backup_folder):
     timestamp = time.strftime("%Y%m%d%H%M%S")
     backup_filename = f"backup_{timestamp}.db"
 
-    source_file = os.path.join(source_path, "database.db")
+    source_file = os.path.join(source_path)
     backup_file = os.path.join(backup_folder, backup_filename)
+
+    # Check if the backup file already exists
+    if os.path.exists(backup_file):
+        # Delete the old backup file
+        os.remove(backup_file)
 
     shutil.copyfile(source_file, backup_file)
 
@@ -1427,6 +1465,8 @@ class MainWindow:
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
 
+        print(script_dir)
+
         image_path = os.path.join(script_dir, folder_name, image_file_name)
 
         print(image_path)
@@ -1434,7 +1474,8 @@ class MainWindow:
         try:
             img = Image.open(image_path)
             photo_resized = img.resize((160, 160), Image.LANCZOS)
-            self.BOC_Main_icon = ImageTk.PhotoImage(photo_resized)
+            self.Main_icon = ImageTk.PhotoImage(photo_resized)
+            print(self.Main_icon)
         except FileNotFoundError as e:
             print(f"Error opening image: {e}")
         except Exception as e:
@@ -1448,7 +1489,7 @@ class MainWindow:
                            text="Wiki Lite",
                            font=("Myriad Pro", 40, "bold", "underline"),
                            relief=RAISED,
-                           image=self.BOC_Main_icon,
+                           image=self.Main_icon,
                            compound="bottom",
                            bd=10,
                            padx=10,
@@ -1884,7 +1925,7 @@ class display_infomation:
                                   wrap="word",
                                   height=50,
                                   width=200,
-                                  font=("Myriad Pro", 30)
+                                  font=("Myriad Pro", 20)
                                   )
         self.Info_sum_text.grid(row=0, column=0, sticky="nsew")
 
@@ -1922,7 +1963,7 @@ class display_infomation:
                                    wrap="word",
                                    height=50,
                                    width=200,
-                                   font=("Myriad Pro", 30)
+                                   font=("Myriad Pro", 20)
                                    )
         self.Info_full_scrollbar = Scrollbar(self.Info_sum_content_frame)
 
@@ -1948,10 +1989,17 @@ class display_infomation:
 
 if __name__ == "__main__":
     main()
+
+    database_path = select_database()
+
+    backup_folder_path = select_backup_folder()
+    print(backup_folder_path)
+
     root_window = Tk()
     app = MainWindow(root_window)
     root_window.mainloop()
-    schedule.every().day.at("11:00").do(backup_database, r"C:\Users\Maxim\PycharmProjects\RE_BOC_Leitfaden", r"C:\Users\Maxim\PycharmProjects\RE_BOC_Leitfaden\Backup")
+
+    schedule.every().day.at("09:30").do(backup_database, database_path, backup_folder_path)
 
     while True:
         schedule.run_pending()
