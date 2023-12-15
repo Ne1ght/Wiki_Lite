@@ -12,7 +12,7 @@ import PIL.Image
 from PIL import Image, ImageTk
 import sqlite3
 
-
+"""
 def create_virtualenv(venv_path):
     subprocess.run([sys.executable, "-m", "venv", str(venv_path)])
 
@@ -42,6 +42,8 @@ def main():
 
     if not check_previous_setup():
         setup_environment(venv_path)
+
+"""
 
 def select_database():
     root_path = os.getcwd()
@@ -1988,7 +1990,7 @@ class display_infomation:
 
 
 if __name__ == "__main__":
-    main()
+    #main()
 
     database_path = select_database()
 
