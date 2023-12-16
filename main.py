@@ -5,6 +5,7 @@ import schedule
 import sys
 import subprocess
 from pathlib import Path
+from datetime import datetime, timedelta
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
@@ -45,39 +46,6 @@ def main():
 
 """
 
-def select_database():
-    root_path = os.getcwd()
-
-    database = "DataBase.db"
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    print(script_dir)
-
-    database_path = os.path.join(script_dir, database)
-
-    print(database_path)
-
-    print(database_path)
-    return database_path
-
-def select_backup_folder():
-    root_path = os.getcwd()
-
-    folder_name = "Backup"
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    print(script_dir)
-
-    backup_folder_path = os.path.join(script_dir, folder_name)
-
-    print(database_path)
-
-
-    print(backup_folder_path)
-    return backup_folder_path
-
 con = sqlite3.connect("DataBase.db")
 cur = con.cursor()
 
@@ -111,20 +79,6 @@ cur.execute("""
     )
 """)
 con.commit()
-
-def backup_database(source_path, backup_folder):
-    timestamp = time.strftime("%Y%m%d%H%M%S")
-    backup_filename = f"backup_{timestamp}.db"
-
-    source_file = os.path.join(source_path)
-    backup_file = os.path.join(backup_folder, backup_filename)
-
-    # Check if the backup file already exists
-    if os.path.exists(backup_file):
-        # Delete the old backup file
-        os.remove(backup_file)
-
-    shutil.copyfile(source_file, backup_file)
 
 
 class AddWindow:
@@ -1332,6 +1286,13 @@ class CreatedWindow:
             # Make the message box modal
             top.grab_set()
 
+class ReportFrame:
+    def __init__(self, root_window):
+        self.mainroot = root_window
+
+        self.report_frame = Frame(self.mainroot, bg="red")
+        self.report_frame.pack()
+
 
 # login for the creation, adding, changing or deleting for infomation catogorys
 class LoginFrame:
@@ -1448,15 +1409,18 @@ class MainWindow:
         self.mainroot.geometry("2560x1600")
         self.mainroot.state("zoomed")
 
+        self.backup_performed = False
+
+        if not self.backup_performed:
+            self.created_Backup()
+            self.backup_performed = True
+
         self.pages = []
         self.current_page = 0
         self.buttons_per_page = 12
 
         cwd = os.getcwd()
         files=os.listdir(cwd)
-
-        print("Current Working Directory:", os.getcwd())
-        print(files)
 
         folder_name = "Images"
         image_file_name = "BOC_Leasing.png"
@@ -1467,17 +1431,12 @@ class MainWindow:
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        print(script_dir)
-
         image_path = os.path.join(script_dir, folder_name, image_file_name)
-
-        print(image_path)
 
         try:
             img = Image.open(image_path)
             photo_resized = img.resize((160, 160), Image.LANCZOS)
             self.Main_icon = ImageTk.PhotoImage(photo_resized)
-            print(self.Main_icon)
         except FileNotFoundError as e:
             print(f"Error opening image: {e}")
         except Exception as e:
@@ -1507,6 +1466,49 @@ class MainWindow:
 
         top_left = LoginFrame(root_window, self.content_frame)
         top_left.login_frame.place(x=1, height=200, width=620)
+
+        top_right = ReportFrame(root_window)
+        top_right.report_frame.place(x=1095, height=250, width=600)
+
+
+    def created_Backup(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        database_file = "DataBase.db"
+        Backup_folder = "Backup"
+
+        current_time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+        print(current_time)
+        Backup = f"DataBase_Backup_{current_time}.db"
+
+        database_path = os.path.join(script_dir, database_file)
+        print(database_path)
+
+        backup_path = os.path.join(script_dir, Backup_folder)
+        print(backup_path)
+
+        Backup_file_path = os.path.join(script_dir, Backup_folder, Backup)
+        print(Backup_file_path)
+
+        shutil.copyfile(database_path, Backup_file_path)
+
+        self.delete_old_database(backup_path)
+
+
+
+    def delete_old_database(self, backup_folder):
+        current_time = datetime.now()
+        one_week_ago = current_time - timedelta(days=7)
+
+        for file_name in os.listdir(backup_folder):
+            file_path = os.path.join(backup_folder, file_name)
+
+            # Check if the file is older than one week
+            file_creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
+            if file_creation_time < one_week_ago and os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted old backup: {file_path}")
+
 
     def display_existing_buttons(self, content_frame):
         if not hasattr(self, 'page') or not self.page.winfo_exists():
@@ -1991,18 +1993,6 @@ class display_infomation:
 
 if __name__ == "__main__":
     #main()
-
-    database_path = select_database()
-
-    backup_folder_path = select_backup_folder()
-    print(backup_folder_path)
-
     root_window = Tk()
     app = MainWindow(root_window)
     root_window.mainloop()
-
-    schedule.every().day.at("09:30").do(backup_database, database_path, backup_folder_path)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
