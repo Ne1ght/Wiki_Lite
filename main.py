@@ -734,17 +734,22 @@ class ChangeWindow:
             if not new_Head_name:
                 cur.execute("SELECT Head_category_name FROM Head_category WHERE Head_category_name=?",
                             (selected_button,))
-                new_Head_name = cur.fetchone()
+                result = cur.fetchone()
+
+                new_Head_name, = result
 
 
             new_Image_path = None
+            print(new_Image_path)
             new_Image_path = self.selected_file.name
+            print(new_Image_path)
 
 
             if not new_Image_path:
                 cur.execute("SELECT image_filename FROM Head_category WHERE Head_category_name=?",
                             (selected_button,))
                 new_Image_path = cur.fetchone()
+                print(new_Image_path)
 
 
             new_category_type = None
@@ -753,11 +758,15 @@ class ChangeWindow:
             if not new_category_type:
                 cur.execute("SELECT category_type FROM Head_category WHERE Head_category_name=?",
                             (selected_button,))
-                new_category_type = cur.fetchone()
+                result = cur.fetchone()
 
-            print(new_Head_name)
-            print(new_Image_path)
-            print(new_category_type)
+                new_category_type, = result
+
+
+            query = new_Head_name, new_Image_path, new_category_type, selected_button
+
+            print(query)
+
 
             cur.execute("UPDATE Head_category SET Head_category_name=?, image_filename=?, category_type=? WHERE Head_category_name=?",
                         (new_Head_name, new_Image_path, new_category_type, selected_button))
@@ -770,7 +779,9 @@ class ChangeWindow:
             if not new_Sub_name:
                 cur.execute("SELECT Sub_Category_name FROM sub_category WHERE Sub_Category_name=?",
                             (selected_button,))
-                new_Sub_name = cur.fetchone()
+                result = cur.fetchone()
+
+                new_Sub_name, = result
 
             new_Image_path = None
             new_Image_path = self.selected_file.name
@@ -794,7 +805,9 @@ class ChangeWindow:
             if not new_Info_name:
                 cur.execute("SELECT Info_name FROM category_Infomation WHERE Info_name=?",
                             (selected_button,))
-                new_Info_name = cur.fetchone()
+                result = cur.fetchone()
+
+                new_Info_name, = result
 
             new_Sum_text = None
             new_Sum_text = self.new_old_Info_Sum_text.get("1.0", "end-1c")
@@ -803,6 +816,7 @@ class ChangeWindow:
                 cur.execute("SELECT Info_Sum_Text FROM category_Infomation WHERE Info_name=?",
                             (selected_button,))
                 new_Sum_text = cur.fetchone()
+                print(new_Sum_text)
 
             new_Full_text = None
             new_Full_text = self.new_old_Info_full_text.get("1.0", "end-1c")
@@ -811,6 +825,7 @@ class ChangeWindow:
                 cur.execute("SELECT Info_Full_Text FROM category_Infomation WHERE Info_name=?",
                             (selected_button,))
                 new_Full_text = cur.fetchone()
+                print(new_Full_text)
 
             print(new_Info_name)
             print(new_Sum_text)
