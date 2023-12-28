@@ -723,8 +723,6 @@ class ChangeWindow:
 
     def update_databse(self, file_source, selected_button):
         self.file_source = file_source
-        print(selected_button)
-
 
         # Process the values based on the number of arguments
         if self.file_source == "Head":
@@ -741,14 +739,20 @@ class ChangeWindow:
 
             new_Image_path = None
             print(new_Image_path)
-            new_Image_path = self.selected_file.name
-            print(new_Image_path)
 
-
-            if not new_Image_path:
+            try:
+                # Attempt to access the 'name' attribute of self.selected_file
+                new_Image_path = self.selected_file.name
+                print(new_Image_path)
+            except AttributeError:
+                print(selected_button)
+                # Handle the AttributeError (self.selected_file is None or has no 'name' attribute)
                 cur.execute("SELECT image_filename FROM Head_category WHERE Head_category_name=?",
                             (selected_button,))
-                new_Image_path = cur.fetchone()
+                result = cur.fetchone()
+
+                new_Image_path, = result
+
                 print(new_Image_path)
 
 
@@ -784,15 +788,22 @@ class ChangeWindow:
                 new_Sub_name, = result
 
             new_Image_path = None
-            new_Image_path = self.selected_file.name
+            print(new_Image_path)
 
-            if not new_Image_path:
+            try:
+                # Attempt to access the 'name' attribute of self.selected_file
+                new_Image_path = self.selected_file.name
+                print(new_Image_path)
+            except AttributeError:
+                print(selected_button)
+                # Handle the AttributeError (self.selected_file is None or has no 'name' attribute)
                 cur.execute("SELECT image_filename FROM sub_category WHERE Sub_Category_name=?",
                             (selected_button,))
-                new_Image_path = cur.fetchone()
+                result = cur.fetchone()
 
-            print(new_Sub_name)
-            print(new_Image_path)
+                new_Image_path, = result
+
+                print(new_Image_path)
 
             cur.execute("UPDATE sub_category SET Sub_Category_name=?, image_filename=? WHERE Sub_Category_name=?",
                         (new_Sub_name, new_Image_path, selected_button))
@@ -839,7 +850,6 @@ class ChangeWindow:
 
     def open_change_view(self):
         selected_button = self.Info_Header_Name
-        print(selected_button)
 
         if self.selected_category_source == "Head":
             cur.execute("SELECT Head_category_name, image_filename, category_type FROM Head_category WHERE Head_category_name=?",
