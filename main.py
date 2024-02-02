@@ -776,7 +776,7 @@ class ChangeWindow:
                         (new_Head_name, new_Image_path, new_category_type, selected_button))
             con.commit()
 
-            messagebox.showinfo("Succes", "The Head Catgeory was changed")
+            messagebox.showinfo("Succes", "The Head Catgeory was changed!")
 
         elif self.file_source == "Sub":
             new_Sub_name = None
