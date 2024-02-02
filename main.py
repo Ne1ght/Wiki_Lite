@@ -776,6 +776,8 @@ class ChangeWindow:
                         (new_Head_name, new_Image_path, new_category_type, selected_button))
             con.commit()
 
+            messagebox.showinfo("Succes", "The Head Catgeory was changed")
+
         elif self.file_source == "Sub":
             new_Sub_name = None
             new_Sub_name = self.new_button_name.get()
@@ -808,6 +810,8 @@ class ChangeWindow:
             cur.execute("UPDATE sub_category SET Sub_Category_name=?, image_filename=? WHERE Sub_Category_name=?",
                         (new_Sub_name, new_Image_path, selected_button))
             con.commit()
+
+            messagebox.showinfo("Succes", "The Sub Category was changed")
 
         elif self.file_source == "Info":
             new_Info_name = None
@@ -845,6 +849,8 @@ class ChangeWindow:
             cur.execute("UPDATE category_infomation SET Info_name=?, Info_Sum_Text=?, Info_Full_Text=? WHERE Info_name=?",
                         (new_Info_name, new_Sum_text, new_Full_text, selected_button))
             con.commit()
+
+            messagebox.showinfo("Succes", "The Infomation was changed")
         else:
             messagebox.showerror("Error", "Das ist ungewöhnliches verhalten des programmes bitte melden sie sich beim admin!")
 
@@ -1311,12 +1317,7 @@ class CreatedWindow:
             # Make the message box modal
             top.grab_set()
 
-class ReportFrame:
-    def __init__(self, root_window):
-        self.mainroot = root_window
 
-        self.report_frame = Frame(self.mainroot, bg="red")
-        self.report_frame.pack()
 
 
 # login for the creation, adding, changing or deleting for infomation catogorys
@@ -1492,8 +1493,7 @@ class MainWindow:
         top_left = LoginFrame(root_window, self.content_frame)
         top_left.login_frame.place(x=1, height=200, width=620)
 
-        top_right = ReportFrame(root_window)
-        top_right.report_frame.place(x=1095, height=250, width=600)
+
 
 
     def created_Backup(self):
@@ -2002,7 +2002,7 @@ class display_infomation:
         self.Info_full_text.insert("1.0", Full_text)
 
         self.Info_full_text.config(yscrollcommand=self.Info_full_scrollbar.set)
-        self.Info_sum_text.config(state="disabled")
+        self.Info_full_text.config(state="disabled")
 
         self.Info_sum_content_frame.columnconfigure(0, weight=1)
 
