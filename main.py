@@ -1385,7 +1385,7 @@ class LoginFrame:
 
     def password_check(self):
         admin_password = self.admin_entry.get()
-        if admin_password == "1":
+        if admin_password == "Dreyer017":
             self.created_button.grid(row=1, column=2, sticky=E, padx=15, pady=25)
             self.delete_button.grid(row=2, column=2)
             self.change_button.grid(row=1, column=3, pady=10)
@@ -1397,6 +1397,7 @@ class LoginFrame:
             pass
 
     def logout(self):
+        self.admin_entry.delete(0, 9)
         self.logout_button.grid_forget()
         self.change_button.grid_forget()
         self.created_button.grid_forget()
